@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   text: {
-    fontFamily: fonts.semibold,
+    ...fonts.semibold,
     letterSpacing: -0.3,
   },
 });

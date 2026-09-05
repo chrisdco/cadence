@@ -19,7 +19,7 @@
 
 export { colors, type ColorSchemeName, type ThemeColors } from './colors';
 export { fontAssets } from './font-assets';
-export { fonts } from './fonts';
+export { fonts, type FontFace, type FontFaceName } from './fonts';
 export { marketing } from './marketing';
 export { motion, springs } from './motion';
 export { radius } from './radius';

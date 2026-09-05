@@ -131,7 +131,7 @@ export function DailyGoalCard({ percent, onStartPractice }: DailyGoalCardProps) 
             value={clamped}
             color={colors.foreground}
             fontSize={PERCENT_SIZE}
-            fontFamily={fonts.bold}
+            font={fonts.bold}
             weight="bold"
             duration={0.6}
           />

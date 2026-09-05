@@ -1,11 +1,14 @@
 import { Text } from 'react-native';
 
+import type { FontFace } from '@/constants/theme';
+
 export type AnimatedRoundedNumberProps = {
   text: string;
   value: number;
   color: string;
   fontSize: number;
-  fontFamily: string;
+  /** The face to render with on Android and web; iOS uses `weight` instead. */
+  font: FontFace;
   /** Subset of SwiftUI's Font.Weight the app actually uses. */
   weight: 'semibold' | 'bold' | 'heavy';
   duration: number;
@@ -16,7 +19,7 @@ export function AnimatedRoundedNumber({
   text,
   color,
   fontSize,
-  fontFamily,
+  font,
 }: AnimatedRoundedNumberProps) {
-  return <Text style={{ color, fontSize, fontFamily }}>{text}</Text>;
+  return <Text style={[font, { color, fontSize }]}>{text}</Text>;
 }

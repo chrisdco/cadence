@@ -137,12 +137,14 @@ function NavThemeProvider({ children }: { children: ReactNode }) {
       card: colors.background,
       text: colors.foreground,
     },
-    // Navigator-rendered text (headers, back labels) uses SF Pro Rounded too.
+    // Navigator-rendered text (headers, back labels) uses the app faces too.
+    // The nominal weight comes first so a face that carries its own weight
+    // (Android) overrides it.
     fonts: {
-      regular: { fontFamily: fonts.regular, fontWeight: "400" },
-      medium: { fontFamily: fonts.medium, fontWeight: "500" },
-      bold: { fontFamily: fonts.semibold, fontWeight: "600" },
-      heavy: { fontFamily: fonts.bold, fontWeight: "700" },
+      regular: { fontWeight: "400", ...fonts.regular },
+      medium: { fontWeight: "500", ...fonts.medium },
+      bold: { fontWeight: "600", ...fonts.semibold },
+      heavy: { fontWeight: "700", ...fonts.bold },
     },
   } as const;
 

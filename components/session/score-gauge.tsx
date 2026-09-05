@@ -93,7 +93,7 @@ export function ScoreGauge({ score, delta }: ScoreGaugeProps) {
             value={displayScore}
             color={colors.foreground}
             fontSize={SCORE_SIZE}
-            fontFamily={fonts.heavy}
+            font={fonts.heavy}
             weight="heavy"
             duration={0.9}
           />

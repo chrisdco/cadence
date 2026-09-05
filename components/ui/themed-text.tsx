@@ -60,7 +60,7 @@ export function ThemedText({
     marketingAccent: colors.marketingAccent,
   };
 
-  const face: TextStyle | undefined = weight ? { fontFamily: fonts[weight] } : undefined;
+  const face: TextStyle | undefined = weight ? fonts[weight] : undefined;
 
   return <Text style={[type[variant], face, { color: ink[tone] }, style]} {...props} />;
 }

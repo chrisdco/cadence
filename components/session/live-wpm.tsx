@@ -30,7 +30,7 @@ export function LiveWpm({ liveWpm, targetWpm }: LiveWpmProps) {
           value={liveWpm}
           color={colors.accent}
           fontSize={type.title3.fontSize}
-          fontFamily={fonts.semibold}
+          font={fonts.semibold}
           weight="semibold"
           duration={0.5}
         />

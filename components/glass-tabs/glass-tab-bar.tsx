@@ -476,7 +476,7 @@ export function GlassTabButton({
 const styles = StyleSheet.create({
   label: {
     fontSize: LABEL_FONT_SIZE,
-    fontFamily: fonts.semibold,
+    ...fonts.semibold,
     marginTop: ITEM_GAP,
   },
 });

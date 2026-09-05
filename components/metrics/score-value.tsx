@@ -53,9 +53,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   value: {
-    fontFamily: fonts.heavy,
+    ...fonts.heavy,
   },
   max: {
-    fontFamily: fonts.semibold,
+    ...fonts.semibold,
   },
 });

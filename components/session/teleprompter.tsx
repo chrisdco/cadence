@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   paragraph: {
-    fontFamily: fonts.semibold,
+    ...fonts.semibold,
     letterSpacing: -0.3,
   },
 });

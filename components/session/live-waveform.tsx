@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   timer: {
     ...type.title,
-    fontFamily: fonts.semibold,
+    ...fonts.semibold,
     fontVariant: ['tabular-nums'],
     marginHorizontal: spacing.lg,
     minWidth: TIMER_MIN_WIDTH,

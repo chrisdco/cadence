@@ -40,17 +40,17 @@ grep -rEn 'shadow(Color|Offset|Opacity|Radius)|elevation:' app components --incl
 
 The spacing whitelist is the scale in `constants/spacing.ts` — update both together. Hits should be the handful of commented one-offs; anything else is a value that escaped the theme.
 
-# Typography: SF Pro Rounded
+# Typography
 
-All text uses SF Pro Rounded, bundled in `assets/fonts/` and loaded at runtime in `app/_layout.tsx` (Expo Go can't embed fonts at build time; the expo-font config plugin in `app.json` covers dev builds).
+All text uses SF Pro Rounded on iOS and web, bundled in `assets/fonts/` and loaded at runtime in `app/_layout.tsx` (Expo Go can't embed fonts at build time; the expo-font config plugin in `app.json` covers dev builds). Android uses Google Sans Flex Rounded: one family with nine weights in `assets/fonts/android/`, linked at build time by the same plugin as an Android font XML resource under the name `GoogleSansFlexRounded`. Those files are static instances of the Google Sans Flex variable font with the ROND axis pinned to 100; regenerate them with fontTools `varLib.instancer` if one changes.
 
-Weight comes from `fontFamily`, never `fontWeight`, which makes iOS synthesize the weight or fall back to the system font. `ThemedText` handles this — its `weight` prop maps to a face:
+A face is a `fonts.<name>` object from `@/constants/theme` (`regular`, `medium`, `semibold`, `bold`, `heavy`), spread into a style. On iOS it is a single-face `fontFamily` with no weight. On Android it is the family plus a `fontWeight`. Never set a bare `fontWeight` or `fontFamily` string: on iOS a mismatched weight makes the system synthesize it or fall back to the system font, and on Android a bare family name loses its weight. `constants/fonts.ts` and `constants/fonts.android.ts` must keep the same keys. `ThemedText` handles this — its `weight` prop maps to a face:
 
 ```tsx
 <ThemedText variant="footnote" weight="bold" tone="secondary">…</ThemedText>
 ```
 
-Reach for `fonts` from `@/constants/theme` directly only where `ThemedText` can't go: a `TextInput`, an `Animated.Text`, or a SwiftUI Host that takes a font family as a prop.
+Reach for `fonts` directly only where `ThemedText` can't go: a `TextInput` or `Animated.Text` (spread the face), or a prop that takes only a family string (pass `fonts.<name>.fontFamily`, and accept that Android renders it at the regular weight).
 
 # Icons: Hugeicons Pro
 

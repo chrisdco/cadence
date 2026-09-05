@@ -70,6 +70,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    fontFamily: fonts.bold,
+    ...fonts.bold,
   },
 });

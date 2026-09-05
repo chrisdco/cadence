@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
    * numbers on the same baseline. */
   value: {
     fontSize: 19,
-    fontFamily: fonts.heavy,
+    ...fonts.heavy,
   },
   divider: {
     height: 1,

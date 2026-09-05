@@ -341,7 +341,7 @@ export function ScoreChart({ points, avg, onScrub }: ScoreChartProps) {
           definition={definition}
           height={CHART_HEIGHT}
           color={colors.foreground}
-          fontFamily={fonts.medium}
+          fontFamily={fonts.medium.fontFamily}
           accessibilityLabel="Speaking score by day"
           accessibilityHint="Swipe up or down to inspect a bar. Its details read out above the chart."
           testID="speaking-score-chart"

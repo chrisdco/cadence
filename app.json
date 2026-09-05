@@ -44,13 +44,69 @@
       [
         "expo-font",
         {
-          "fonts": [
-            "./assets/fonts/SF-Pro-Rounded-Regular.otf",
-            "./assets/fonts/SF-Pro-Rounded-Medium.otf",
-            "./assets/fonts/SF-Pro-Rounded-Semibold.otf",
-            "./assets/fonts/SF-Pro-Rounded-Bold.otf",
-            "./assets/fonts/SF-Pro-Rounded-Heavy.otf"
-          ]
+          "ios": {
+            "fonts": [
+              "./assets/fonts/SF-Pro-Rounded-Regular.otf",
+              "./assets/fonts/SF-Pro-Rounded-Medium.otf",
+              "./assets/fonts/SF-Pro-Rounded-Semibold.otf",
+              "./assets/fonts/SF-Pro-Rounded-Bold.otf",
+              "./assets/fonts/SF-Pro-Rounded-Heavy.otf"
+            ]
+          },
+          "android": {
+            "fonts": [
+              {
+                "fontFamily": "GoogleSansFlexRounded",
+                "fontDefinitions": [
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-Thin.ttf",
+                    "weight": 100,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-ExtraLight.ttf",
+                    "weight": 200,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-Light.ttf",
+                    "weight": 300,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-Regular.ttf",
+                    "weight": 400,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-Medium.ttf",
+                    "weight": 500,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-SemiBold.ttf",
+                    "weight": 600,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-Bold.ttf",
+                    "weight": 700,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-ExtraBold.ttf",
+                    "weight": 800,
+                    "style": "normal"
+                  },
+                  {
+                    "path": "./assets/fonts/android/GoogleSansFlexRounded-Black.ttf",
+                    "weight": 900,
+                    "style": "normal"
+                  }
+                ]
+              }
+            ]
+          }
         }
       ],
       "expo-audio",
