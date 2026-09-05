@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { Easing, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import { AnimatedRoundedNumber } from '@/components/animated-rounded-number';
@@ -139,8 +139,10 @@ const styles = StyleSheet.create({
   maxBox: {
     height: SCORE_BOX_HEIGHT,
     justifyContent: 'flex-end',
-    // Lifts "/100" off the box floor onto the 56px digits' baseline.
-    paddingBottom: 11,
+    // Lifts "/100" off the box floor onto the 56px digits' baseline. The
+    // fallback Text on Android draws its digits ~5dp lower in the box than
+    // SwiftUI does, so the lift is smaller there (measured, not derived).
+    paddingBottom: Platform.select({ ios: 11, default: 6 }),
   },
   band: {
     marginTop: spacing.xxs,
