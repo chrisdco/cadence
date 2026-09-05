@@ -72,6 +72,11 @@ const light = {
   accentFaded: '#AECBFA',
   /** Tinted bed behind an accent glyph or an accent-labelled button. */
   accentBg: 'rgba(52,120,246,0.12)',
+  /** Opaque accent wash for the sign-in gradient's top stop. Opaque on
+   * purpose: a translucent stop interpolates differently per platform (iOS
+   * non-premultiplied, Android premultiplied), which made the same gradient
+   * read as a strong blue on iOS and a faint one on Android. */
+  accentWash: '#C4D5F6',
   /** Only for an improving delta, and for live in-session "on target". */
   positive: '#23A55A',
   positiveBg: '#E7F6EC',
@@ -133,6 +138,7 @@ const dark: Record<keyof typeof light, string> = {
   accent: '#4C8DFF',
   accentFaded: '#2E4A79',
   accentBg: 'rgba(76,141,255,0.18)',
+  accentWash: '#1E2E4B',
   positive: '#2ECC71',
   positiveBg: 'rgba(46,204,113,0.16)',
   warn: '#FF9F0A',

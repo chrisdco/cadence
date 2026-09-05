@@ -1,6 +1,6 @@
 import MaskedView from '@react-native-masked-view/masked-view';
 import { BlurView } from 'expo-blur';
-import { StyleSheet, View, ViewProps } from 'react-native';
+import { Platform, StyleSheet, View, ViewProps } from 'react-native';
 
 /** Shared falloff beyond floating navigation chrome. */
 export const CHROME_BLUR_BLEED = 44;
@@ -29,6 +29,15 @@ export function ProgressiveBlur({
 }: Props) {
   const toEdge = direction === 'top' ? 'bottom' : 'top';
   const rgb = tint === 'dark' ? '0,0,0' : '255,255,255';
+  // Android's BlurView draws a flat tint unless it is pointed at a
+  // BlurTargetView, and that path (Dimezis under a MaskedView) segfaults the
+  // render thread here, so Android keeps the tint and carries the legibility
+  // on a heavier scrim instead: the gradient below is what keeps a header or
+  // the tab bar readable over scrolling text without any blur behind it.
+  const scrim =
+    Platform.OS === 'android'
+      ? `linear-gradient(to ${toEdge}, rgba(${rgb},0.96) 0%, rgba(${rgb},0.86) 30%, rgba(${rgb},0.55) 55%, rgba(${rgb},0.2) 80%, rgba(${rgb},0) 100%)`
+      : `linear-gradient(to ${toEdge}, rgba(${rgb},0.70) 0%, rgba(${rgb},0.32) 42%, rgba(${rgb},0.08) 68%, rgba(${rgb},0) 88%)`;
 
   return (
     <View pointerEvents="none" style={style} {...rest}>
@@ -51,7 +60,7 @@ export function ProgressiveBlur({
           left: 0,
           right: 0,
           bottom: 0,
-          experimental_backgroundImage: `linear-gradient(to ${toEdge}, rgba(${rgb},0.70) 0%, rgba(${rgb},0.32) 42%, rgba(${rgb},0.08) 68%, rgba(${rgb},0) 88%)`,
+          experimental_backgroundImage: scrim,
         }}
       />
     </View>

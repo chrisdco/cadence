@@ -10,6 +10,7 @@ import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
@@ -173,21 +174,37 @@ function NavThemeProvider({ children }: { children: ReactNode }) {
  */
 function RootNavigator({ scheme }: { scheme: ColorSchemeName }) {
   const { isLoaded, isSignedIn } = useAuth();
+  const { colors } = useTheme();
   const { onboardingCompletedAt } = useSettings();
   const signedIn = isLoaded
     ? isSignedIn === true
     : getLastSignedInUserId() !== null;
   const onboarded = onboardingCompletedAt != null;
 
-  const blurHeader = {
-    title: "",
-    headerTransparent: true,
-    headerShadowVisible: false,
-    headerBlurEffect: "none",
-    headerBackground: () => (
-      <ProgressiveBlur direction="top" tint={scheme} style={{ flex: 1 }} />
-    ),
-  } as const;
+  // The modal header. iOS: transparent, with the shared progressive blur, so
+  // the form scrolls beneath the toolbar. Android: an opaque bar in the screen
+  // color. Android ignores `contentInsetAdjustmentBehavior`, so a transparent
+  // header there laid the toolbar title over the first row of content; it
+  // also shows a back arrow on a modal by default, which the close button
+  // in the toolbar already covers.
+  const blurHeader =
+    Platform.OS === "ios"
+      ? ({
+          title: "",
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerBlurEffect: "none",
+          headerBackground: () => (
+            <ProgressiveBlur direction="top" tint={scheme} style={{ flex: 1 }} />
+          ),
+        } as const)
+      : ({
+          title: "",
+          headerShadowVisible: false,
+          headerBackVisible: false,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.foreground,
+        } as const);
 
   return (
     <Stack>

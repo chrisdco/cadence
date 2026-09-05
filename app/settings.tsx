@@ -6,8 +6,19 @@ import * as Haptics from 'expo-haptics';
 import { Observe } from 'expo-observe';
 import { router, Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  TextInput,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ModalCloseToolbar } from '@/components/modal-close-toolbar';
 import { ThemedText } from '@/components/ui';
 import { ACCENTS, hasPhonemeDetail } from '@/constants/accents';
 import { GOAL_OPTIONS } from '@/constants/goals';
@@ -111,6 +122,7 @@ export default function SettingsScreen() {
   useMarkInteractive();
 
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { user } = useUser();
   const { signOut } = useClerk();
   const deleteRemoteBatch = useMutation(api.account.deleteAll);
@@ -236,7 +248,12 @@ export default function SettingsScreen() {
         contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}
+        // iOS adds the bottom safe area through the automatic content inset;
+        // Android has no such adjustment, so the gesture bar is padded here.
+        contentContainerStyle={[
+          styles.content,
+          Platform.OS === 'android' && { paddingBottom: spacing.xxxxl + insets.bottom },
+        ]}
         showsVerticalScrollIndicator={false}>
         <Eyebrow>ACCOUNT</Eyebrow>
         <SettingsCard>
@@ -399,9 +416,7 @@ export default function SettingsScreen() {
           </View>
         </Stack.Toolbar.View>
       </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="xmark" onPress={handleClose} />
-      </Stack.Toolbar>
+      <ModalCloseToolbar onPress={handleClose} />
     </>
   );
 }

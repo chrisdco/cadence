@@ -52,7 +52,9 @@ export function DrillCard({ drill, onStart }: DrillCardProps) {
             weight="regular"
             tone="secondary"
             style={styles.blurb}
-            numberOfLines={1}>
+            // Two lines, not one: Android's typeface runs wider than SF Pro
+            // Rounded and truncated "Sharpen tricky sounds" mid-word.
+            numberOfLines={2}>
             {meta.blurb}
           </ThemedText>
         )}

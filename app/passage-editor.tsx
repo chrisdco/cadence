@@ -3,8 +3,10 @@ import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { router, Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ModalCloseToolbar } from '@/components/modal-close-toolbar';
 import { SegmentedControl } from '@/components/segmented-control';
 import { PrimaryButton, ThemedText } from '@/components/ui';
 import { radius, spacing, type } from '@/constants/theme';
@@ -40,6 +42,7 @@ export default function PassageEditorScreen() {
   useMarkInteractive();
 
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
@@ -87,7 +90,12 @@ export default function PassageEditorScreen() {
         style={{ flex: 1, backgroundColor: colors.background }}
         contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={styles.content}
+        // iOS adds the bottom safe area through the automatic content inset;
+        // Android has no such adjustment, so the gesture bar is padded here.
+        contentContainerStyle={[
+          styles.content,
+          Platform.OS === 'android' && { paddingBottom: spacing.xxxxl + insets.bottom },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <EditorCard>
@@ -173,9 +181,7 @@ export default function PassageEditorScreen() {
           </View>
         </Stack.Toolbar.View>
       </Stack.Toolbar>
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="xmark" onPress={handleClose} />
-      </Stack.Toolbar>
+      <ModalCloseToolbar onPress={handleClose} />
     </>
   );
 }

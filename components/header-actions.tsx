@@ -1,9 +1,9 @@
 import { Crown02Icon, FireIcon, Settings01Icon } from '@hugeicons-pro/core-solid-rounded';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { GlassContainer, GlassView } from 'expo-glass-effect';
+import { GlassContainer, GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ui';
 import { radius, spacing } from '@/constants/theme';
@@ -34,6 +34,11 @@ function proButtonLabel(isLoading: boolean, isPro: boolean): string {
 export function HeaderActions({ streak }: { streak: number }) {
   const { colors } = useTheme();
   const { access, isLoading } = useSubscription();
+  /** Android (and iOS < 26) has no liquid glass: `GlassView` renders a bare
+   * transparent view there, which left the streak count and cog floating on
+   * the background. The fallback is the same surface `GlassSurface` uses. */
+  const hasGlass = isLiquidGlassAvailable();
+  const fallback = { backgroundColor: colors.glassFallback };
 
   /**
    * The subscription entry point. Subscribers get the Customer Center, where
@@ -57,6 +62,20 @@ export function HeaderActions({ streak }: { streak: number }) {
     router.push('/settings');
   };
 
+  const streakContent = (
+    <>
+      <HugeiconsIcon
+        icon={access.isPro ? Crown02Icon : FireIcon}
+        size={24}
+        color={access.isPro ? PRO_GOLD : STREAK_FLAME}
+      />
+      <ThemedText variant="callout" weight="medium">
+        {streak}
+      </ThemedText>
+    </>
+  );
+  const cogContent = <HugeiconsIcon icon={Settings01Icon} size={24} color={colors.tertiary} />;
+
   return (
     <GlassContainer spacing={spacing.sm} style={styles.row}>
       {/* Pressable wraps the glass rather than the reverse: GlassView renders a
@@ -68,21 +87,22 @@ export function HeaderActions({ streak }: { streak: number }) {
         accessibilityState={{ disabled: isLoading }}
         accessibilityLabel={proButtonLabel(isLoading, access.isPro)}
         accessibilityHint={`Current streak: ${streak}`}>
-        <GlassView isInteractive style={styles.streak}>
-          <HugeiconsIcon
-            icon={access.isPro ? Crown02Icon : FireIcon}
-            size={24}
-            color={access.isPro ? PRO_GOLD : STREAK_FLAME}
-          />
-          <ThemedText variant="callout" weight="medium">
-            {streak}
-          </ThemedText>
-        </GlassView>
+        {hasGlass ? (
+          <GlassView isInteractive style={styles.streak}>
+            {streakContent}
+          </GlassView>
+        ) : (
+          <View style={[styles.streak, fallback]}>{streakContent}</View>
+        )}
       </Pressable>
       <Pressable onPress={openSettings} accessibilityRole="button" accessibilityLabel="Settings">
-        <GlassView isInteractive style={styles.cog}>
-          <HugeiconsIcon icon={Settings01Icon} size={24} color={colors.tertiary} />
-        </GlassView>
+        {hasGlass ? (
+          <GlassView isInteractive style={styles.cog}>
+            {cogContent}
+          </GlassView>
+        ) : (
+          <View style={[styles.cog, fallback]}>{cogContent}</View>
+        )}
       </Pressable>
     </GlassContainer>
   );

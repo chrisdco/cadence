@@ -210,12 +210,13 @@ export default function SignInScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Placeholder artwork. Same technique as passage-carousel.tsx and
           progressive-blur.tsx: a CSS gradient with no gradient package. The
-          stops are theme tokens so it follows the scheme. */}
+          stops are theme tokens so it follows the scheme, and both are opaque
+          so iOS and Android draw the same wash (see `accentWash`). */}
       <View
         style={[
           StyleSheet.absoluteFill,
           {
-            experimental_backgroundImage: `linear-gradient(to bottom, ${colors.accentBg} 0%, ${colors.background} 70%)`,
+            experimental_backgroundImage: `linear-gradient(to bottom, ${colors.accentWash} 0%, ${colors.background} 70%)`,
           },
         ]}
       />

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { KeyboardStickyView } from 'react-native-keyboard-controller';
+import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
+import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton, ThemedText } from '@/components/ui';
@@ -22,8 +23,8 @@ export type OnboardingScreenProps = {
 /**
  * The shape every onboarding step shares: a scroll view for the question and
  * its choices, and a CTA pinned to the bottom edge. The CTA lives outside the
- * scroll view in a `KeyboardStickyView`, so on the name step it rides up with
- * the keyboard frame-for-frame instead of hiding behind it. The `opened` offset
+ * scroll view on a keyboard-driven translate, so on the name step it rides up
+ * with the keyboard frame-for-frame instead of hiding behind it. The offset
  * cancels the safe-area padding, which the keyboard already covers.
  *
  * Nothing here animates in. The steps are tapped through quickly, and a
@@ -41,6 +42,22 @@ export function OnboardingScreen({
 }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, spacing.lg);
+  // The same math as `KeyboardStickyView` (keyboard height, negative when
+  // open, plus the `opened` offset), clamped so the CTA never moves DOWN.
+  // Android reports a floating keyboard, a hardware keyboard, or Gboard's
+  // stylus toolbar as open with (almost) no height; unclamped, the offset then
+  // had nothing to cancel and pushed the button past the screen edge.
+  const { height, progress } = useReanimatedKeyboardAnimation();
+  const stickyStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateY: Math.min(
+          0,
+          height.value + interpolate(progress.value, [0, 1], [0, bottomPad]),
+        ),
+      },
+    ],
+  }));
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -63,12 +80,12 @@ export function OnboardingScreen({
           </ThemedText>
         ) : null}
       </ScrollView>
-      <KeyboardStickyView offset={{ closed: 0, opened: bottomPad }}>
+      <Animated.View style={stickyStyle}>
         <View style={[styles.cta, { paddingBottom: bottomPad }]}>
           <PrimaryButton title={ctaTitle} onPress={onContinue} disabled={ctaDisabled} />
           {footer}
         </View>
-      </KeyboardStickyView>
+      </Animated.View>
     </View>
   );
 }

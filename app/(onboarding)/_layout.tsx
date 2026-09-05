@@ -1,6 +1,6 @@
 import { ArrowLeft01Icon } from '@hugeicons-pro/core-stroke-rounded';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { GlassView } from 'expo-glass-effect';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { router, useSegments } from 'expo-router';
 import { Stack } from 'expo-router/stack';
@@ -37,6 +37,11 @@ export default function OnboardingLayout() {
   const current = segments[segments.length - 1];
   const index = Math.max(0, ONBOARDING_STEPS.indexOf(current as never));
   const canGoBack = index > 0;
+  /** No liquid glass on Android: a bare `GlassView` is invisible there. */
+  const hasGlass = isLiquidGlassAvailable();
+  const backIcon = (
+    <HugeiconsIcon icon={ArrowLeft01Icon} size={18} color={colors.secondary} strokeWidth={2} />
+  );
 
   const back = () => {
     Haptics.selectionAsync();
@@ -48,9 +53,13 @@ export default function OnboardingLayout() {
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         {canGoBack ? (
           <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={back}>
-            <GlassView isInteractive style={styles.backCircle}>
-              <HugeiconsIcon icon={ArrowLeft01Icon} size={18} color={colors.secondary} strokeWidth={2} />
-            </GlassView>
+            {hasGlass ? (
+              <GlassView isInteractive style={styles.backCircle}>{backIcon}</GlassView>
+            ) : (
+              <View style={[styles.backCircle, { backgroundColor: colors.glassFallback }]}>
+                {backIcon}
+              </View>
+            )}
           </Pressable>
         ) : (
           <View style={styles.spacer} />

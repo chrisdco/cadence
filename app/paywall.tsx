@@ -3,7 +3,7 @@ import { CheckmarkCircle02Icon, Crown02Icon } from '@hugeicons-pro/core-solid-ro
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
-import { router, Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -20,6 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PACKAGE_TYPE, type PurchasesPackage } from 'react-native-purchases';
 
+import { ModalCloseToolbar } from '@/components/modal-close-toolbar';
 import { OptionCard, PrimaryButton, ThemedText } from '@/components/ui';
 import { radius, spacing } from '@/constants/theme';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
@@ -417,10 +418,8 @@ export default function PaywallScreen() {
           </Pressable>
         </View>
       </ScrollView>
-      {/* Same close control as Settings: the native stack toolbar's xmark. */}
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="xmark" onPress={close} />
-      </Stack.Toolbar>
+      {/* Same close control as Settings. */}
+      <ModalCloseToolbar onPress={close} />
     </>
   );
 }
