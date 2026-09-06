@@ -55,13 +55,13 @@ export function PrimaryButton({
     onPress();
   };
 
-  const shape = [styles.button, { height: HEIGHTS[size] }];
+  const shape = [styles.button, { minHeight: HEIGHTS[size] }];
   const body = (
     <>
       {icon != null && (
         <HugeiconsIcon icon={icon} size={size === 'lg' ? 22 : 20} color={colors.inverseLabel} />
       )}
-      <ThemedText variant="headline" tone="inverse">
+      <ThemedText variant="headline" tone="inverse" style={styles.label}>
         {title}
       </ThemedText>
     </>
@@ -102,6 +102,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+  },
+  label: {
+    flexShrink: 1,
+    textAlign: 'center',
   },
   pressed: {
     opacity: 0.85,

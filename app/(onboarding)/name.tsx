@@ -1,14 +1,10 @@
 import { useUser } from '@clerk/expo';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
 
-import { OnboardingScreen } from '@/components/onboarding';
-import { ThemedText } from '@/components/ui';
-import { radius, spacing, type } from '@/constants/theme';
+import { OnboardingInput, OnboardingScreen } from '@/components/onboarding';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSetting } from '@/hooks/use-settings';
-import { useTheme } from '@/hooks/use-theme';
 
 const MAX_NAME = 24;
 
@@ -19,7 +15,6 @@ const MAX_NAME = 24;
  */
 export default function NameStep() {
   useMarkInteractive();
-  const { colors } = useTheme();
   const { user } = useUser();
   const [stored, setStored] = useSetting('displayName');
   const [name, setName] = useState(stored);
@@ -55,47 +50,25 @@ export default function NameStep() {
   return (
     <OnboardingScreen
       title="What should we call you?"
-      subtitle="Clarity uses your name to greet you on the home screen. Nothing else."
+      centered
       ctaTitle="Continue"
       onContinue={next}
       note={writeFailed ? 'That name could not be saved right now. You can set it in Settings later.' : null}>
-      {/* Glass is chrome, solid cards are content: the same flat card the
-          passage editor and Settings use. */}
-      <View style={[styles.card, { backgroundColor: colors.card }]}>
-        <ThemedText variant="footnote" tone="secondary">
-          Your name
-        </ThemedText>
-        <TextInput
-          value={name}
-          onChangeText={(value) => {
-            typed.current = true;
-            setName(value);
-          }}
-          placeholder="Your first name"
-          placeholderTextColor={colors.secondary}
-          autoFocus
-          autoCapitalize="words"
-          autoComplete="given-name"
-          textContentType="givenName"
-          maxLength={MAX_NAME}
-          returnKeyType="next"
-          onSubmitEditing={next}
-          style={[styles.input, { color: colors.foreground }]}
-        />
-      </View>
+      <OnboardingInput
+        value={name}
+        onChangeText={(value) => {
+          typed.current = true;
+          setName(value);
+        }}
+        placeholder="First name"
+        accessibilityLabel="Your first name, optional"
+        autoCapitalize="words"
+        autoComplete="given-name"
+        textContentType="givenName"
+        maxLength={MAX_NAME}
+        returnKeyType="next"
+        onSubmitEditing={next}
+      />
     </OnboardingScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: radius.lg,
-    borderCurve: 'continuous',
-    padding: spacing.xl,
-    gap: spacing.sm,
-  },
-  input: {
-    ...type.title3,
-    paddingVertical: spacing.xxs,
-  },
-});

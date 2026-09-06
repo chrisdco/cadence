@@ -1,15 +1,17 @@
 import { ArrowLeft01Icon } from '@hugeicons-pro/core-stroke-rounded';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
 import { router, useSegments } from 'expo-router';
 import { Stack } from 'expo-router/stack';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TickBar } from '@/components/metrics';
+import { GlassSurface } from '@/components/ui';
+import { CHROME_BLUR_BLEED, ProgressiveBlur } from '@/components/glass-tabs';
 import { ONBOARDING_STEPS } from '@/components/onboarding';
-import { radius, spacing } from '@/constants/theme';
+import { OnboardingHeaderHeightContext } from '@/components/onboarding/header-height-context';
+import { onboarding, radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /** The first step. Set here, inside the group, rather than as a root anchor:
@@ -17,32 +19,14 @@ import { useTheme } from '@/hooks/use-theme';
  * removed group would point the navigator at a screen that is not there. */
 export const unstable_settings = { initialRouteName: 'name' };
 
-/** Control sizes, not spacing steps. The back circle matches the paywall's
- * close button; the dot row is a fixed box so `space-between` reads as evenly
- * spread dots rather than a bar stretched to the screen. */
-const BACK_SIZE = 36;
-const DOTS_WIDTH = 96;
-const DOT_SIZE = 6;
-
-/**
- * Chrome shared by every onboarding step: a back button on the left, progress
- * dots in the middle, and a spacer on the right so the dots stay optically
- * centered (the same trick `session-top-bar.tsx` uses). It lives here so it
- * does not remount between steps; the steps themselves replay their reveal.
- */
 export default function OnboardingLayout() {
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
+  const [headerHeight, setHeaderHeight] = useState(0);
   const segments = useSegments();
   const current = segments[segments.length - 1];
   const index = Math.max(0, ONBOARDING_STEPS.indexOf(current as never));
   const canGoBack = index > 0;
-  /** No liquid glass on Android: a bare `GlassView` is invisible there. */
-  const hasGlass = isLiquidGlassAvailable();
-  const backIcon = (
-    <HugeiconsIcon icon={ArrowLeft01Icon} size={18} color={colors.secondary} strokeWidth={2} />
-  );
-
   const back = () => {
     Haptics.selectionAsync();
     if (router.canGoBack()) router.back();
@@ -50,53 +34,75 @@ export default function OnboardingLayout() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        {canGoBack ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={back}>
-            {hasGlass ? (
-              <GlassView isInteractive style={styles.backCircle}>{backIcon}</GlassView>
-            ) : (
-              <View style={[styles.backCircle, { backgroundColor: colors.glassFallback }]}>
-                {backIcon}
-              </View>
-            )}
-          </Pressable>
-        ) : (
-          <View style={styles.spacer} />
-        )}
-        <TickBar
-          fill={(index + 1) / ONBOARDING_STEPS.length}
-          tickCount={ONBOARDING_STEPS.length}
-          height={DOT_SIZE}
-          tickWidth={DOT_SIZE}
-          style={styles.dots}
+      <OnboardingHeaderHeightContext
+        value={headerHeight || insets.top + spacing.sm + onboarding.backSize + spacing.sm}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </OnboardingHeaderHeightContext>
+      <View
+        pointerEvents="box-none"
+        style={styles.headerOverlay}
+        onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <ProgressiveBlur
+          direction="top"
+          tint={scheme}
+          style={[StyleSheet.absoluteFill, { bottom: -CHROME_BLUR_BLEED }]}
         />
-        <View style={styles.spacer} />
+        <View pointerEvents="box-none" style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+          {canGoBack ? (
+            <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={back}>
+              <GlassSurface radius="full" interactive style={styles.backCircle}>
+                <HugeiconsIcon icon={ArrowLeft01Icon} size={onboarding.iconSize} color={colors.foreground} strokeWidth={onboarding.iconStroke} />
+              </GlassSurface>
+            </Pressable>
+          ) : (
+            <View style={styles.spacer} />
+          )}
+          <View
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel="Setup progress"
+            accessibilityValue={{ min: 0, max: ONBOARDING_STEPS.length, now: index + 1, text: `Step ${index + 1} of ${ONBOARDING_STEPS.length}` }}
+            style={styles.progressTrack}>
+            {ONBOARDING_STEPS.map((step, position) => (
+              <View key={step} style={[styles.segment, { backgroundColor: position <= index ? colors.accent : colors.track }]} />
+            ))}
+          </View>
+          <View style={styles.spacer} />
+        </View>
       </View>
-      <Stack screenOptions={{ headerShown: false }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  headerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xxl,
+    paddingBottom: spacing.sm,
+    gap: spacing.lg,
+    width: '100%',
+    maxWidth: onboarding.contentWidth,
+    alignSelf: 'center',
   },
   backCircle: {
-    width: BACK_SIZE,
-    height: BACK_SIZE,
+    width: onboarding.backSize,
+    height: onboarding.backSize,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   spacer: {
-    width: BACK_SIZE,
-    height: BACK_SIZE,
+    width: onboarding.backSize,
+    height: onboarding.backSize,
   },
-  dots: {
-    width: DOTS_WIDTH,
-  },
+  progressTrack: { flex: 1, flexDirection: 'row', gap: spacing.xs },
+  segment: { flex: 1, height: onboarding.progressHeight, borderRadius: radius.full },
 });

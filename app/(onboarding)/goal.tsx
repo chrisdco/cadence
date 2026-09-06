@@ -18,8 +18,8 @@ export default function GoalStep() {
 
   return (
     <OnboardingScreen
-      title="How much do you want to practice?"
-      subtitle="This sets your daily goal. You can change it any time in Settings."
+      title="Make a little time for your voice"
+      subtitle="How many minutes fit into your day? Pick a goal you can come back to."
       ctaTitle="Continue"
       onContinue={() => {
         // Confirms the preselected goal too. See the accent step for why an
@@ -27,7 +27,7 @@ export default function GoalStep() {
         setWriteFailed(!setGoalMinutes(goalMinutes));
         router.push('/(onboarding)/priority');
       }}
-      note={writeFailed ? 'That choice could not be saved. Your device may be out of storage.' : null}>
+      note={writeFailed ? 'That choice could not be saved. Your device may be out of storage.' : 'You can change your daily goal in Settings.'}>
       <View style={styles.list}>
         {GOAL_OPTIONS.map((option) => (
           <OptionCard
@@ -52,6 +52,6 @@ export default function GoalStep() {
 
 const styles = StyleSheet.create({
   list: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
 });

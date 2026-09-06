@@ -3,14 +3,8 @@ import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ui';
-import { radius, spacing } from '@/constants/theme';
+import { onboarding, radius, spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
-/** Control sizes, not spacing steps: the row's floor and the leading icon bed. */
-const ROW_MIN_HEIGHT = 72;
-const ICON_BED = 40;
-const CHECK_SIZE = 26;
-const RADIO_SIZE = 24;
 
 export type ChoiceRowProps = {
   title: string;
@@ -34,21 +28,21 @@ export function ChoiceRow({ title, caption, selected, icon }: ChoiceRowProps) {
             styles.iconBed,
             { backgroundColor: selected ? colors.accentBg : colors.fill },
           ]}>
-          <HugeiconsIcon icon={icon} size={22} color={selected ? colors.accent : colors.secondary} />
+          <HugeiconsIcon icon={icon} size={onboarding.iconSize} color={selected ? colors.accent : colors.secondary} />
         </View>
       ) : null}
       <View style={styles.text}>
-        <ThemedText variant="headline">
+        <ThemedText variant="headline" tone={selected ? 'accent' : 'primary'}>
           {title}
         </ThemedText>
         {caption ? (
-          <ThemedText variant="footnote" tone="tertiary">
+          <ThemedText variant="footnote" tone="secondary">
             {caption}
           </ThemedText>
         ) : null}
       </View>
       {selected ? (
-        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={CHECK_SIZE} color={colors.accent} />
+        <HugeiconsIcon icon={CheckmarkCircle02Icon} size={onboarding.checkSize} color={colors.accent} />
       ) : (
         <View style={[styles.radio, { borderColor: colors.track }]} />
       )}
@@ -62,12 +56,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.lg,
-    minHeight: ROW_MIN_HEIGHT,
+    paddingVertical: spacing.md,
+    minHeight: onboarding.rowMinHeight,
   },
   iconBed: {
-    width: ICON_BED,
-    height: ICON_BED,
+    width: onboarding.iconBed,
+    height: onboarding.iconBed,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -77,9 +71,9 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   radio: {
-    width: RADIO_SIZE,
-    height: RADIO_SIZE,
+    width: onboarding.checkSize,
+    height: onboarding.checkSize,
     borderRadius: radius.full,
-    borderWidth: 2,
+    borderWidth: onboarding.radioBorder,
   },
 });

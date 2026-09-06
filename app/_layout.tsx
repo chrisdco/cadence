@@ -9,7 +9,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import * as SystemUI from "expo-system-ui";
-import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -176,10 +176,17 @@ function RootNavigator({ scheme }: { scheme: ColorSchemeName }) {
   const { isLoaded, isSignedIn } = useAuth();
   const { colors } = useTheme();
   const { onboardingCompletedAt } = useSettings();
+  // Opt-in local replay. Finishing writes a new timestamp and exits normally;
+  // the saved completion is never cleared just to preview the screens.
+  const onboardingAtLaunch = useRef(onboardingCompletedAt).current;
+  const replayOnboarding =
+    __DEV__ &&
+    process.env.EXPO_PUBLIC_PREVIEW_ONBOARDING === "1" &&
+    onboardingCompletedAt === onboardingAtLaunch;
   const signedIn = isLoaded
     ? isSignedIn === true
     : getLastSignedInUserId() !== null;
-  const onboarded = onboardingCompletedAt != null;
+  const onboarded = onboardingCompletedAt != null && !replayOnboarding;
 
   // The modal header. iOS: transparent, with the shared progressive blur, so
   // the form scrolls beneath the toolbar. Android: an opaque bar in the screen

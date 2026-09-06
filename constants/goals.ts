@@ -17,10 +17,10 @@ export type GoalOption = {
 };
 
 export const GOAL_OPTIONS: readonly GoalOption[] = [
-  { minutes: 5, caption: 'A quick daily rep.' },
+  { minutes: 5, caption: 'A short speaking break.' },
   { minutes: 10, caption: 'A steady habit.' },
-  { minutes: 20, caption: 'Real practice time.' },
-  { minutes: 30, caption: 'You are training for something.' },
+  { minutes: 20, caption: 'Time to read, review, and retry.' },
+  { minutes: 30, caption: 'Room for a longer session.' },
 ] as const;
 
 export function isGoalMinutes(value: unknown): value is number {

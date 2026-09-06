@@ -3,12 +3,12 @@ import { Tick02Icon } from '@hugeicons-pro/core-stroke-rounded';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react-native';
 import * as Haptics from 'expo-haptics';
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
-import { useEffect, useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import { OnboardingScreen } from '@/components/onboarding';
 import { ThemedText } from '@/components/ui';
-import { spacing } from '@/constants/theme';
+import { onboarding, spacing } from '@/constants/theme';
 import { useMarkInteractive } from '@/hooks/use-mark-interactive';
 import { useSetting } from '@/hooks/use-settings';
 import { useTheme } from '@/hooks/use-theme';
@@ -46,6 +46,8 @@ export default function MicrophoneStep() {
   useMarkInteractive();
   const { colors } = useTheme();
   const [, setCompletedAt] = useSetting('onboardingCompletedAt');
+  const [requesting, setRequesting] = useState(false);
+  const requestInFlight = useRef(false);
   const [state, setState] = useState<PermissionState>(
     SIMULATED_SPEECH ? 'simulated' : 'checking',
   );
@@ -58,17 +60,25 @@ export default function MicrophoneStep() {
     // deterministic practice fixture this profile exists to exercise.
     if (SIMULATED_SPEECH) return;
     let alive = true;
-    (async () => {
+    const refresh = async () => {
       try {
-        setAvailable(ExpoSpeechRecognitionModule.isRecognitionAvailable());
+        const recognitionAvailable = ExpoSpeechRecognitionModule.isRecognitionAvailable();
         const current = await ExpoSpeechRecognitionModule.getPermissionsAsync();
-        if (alive) setState(classify(current));
+        if (alive) {
+          setAvailable(recognitionAvailable);
+          setState(classify(current));
+        }
       } catch {
         if (alive) setState('undetermined');
       }
-    })();
+    };
+    void refresh();
+    const subscription = AppState.addEventListener('change', (next) => {
+      if (next === 'active' && !requestInFlight.current) void refresh();
+    });
     return () => {
       alive = false;
+      subscription.remove();
     };
   }, []);
 
@@ -81,6 +91,9 @@ export default function MicrophoneStep() {
   const finish = () => setWriteFailed(!setCompletedAt(Date.now()));
 
   const request = async () => {
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
+    setRequesting(true);
     try {
       const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
       const next = classify(result);
@@ -89,17 +102,22 @@ export default function MicrophoneStep() {
       else if (next === 'blocked') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } catch {
       setState('undetermined');
+    } finally {
+      requestInFlight.current = false;
+      setRequesting(false);
     }
   };
 
+  const ready = state === 'granted' || state === 'simulated';
+
   const cta =
-    state === 'granted' || state === 'simulated'
-      ? { title: 'Start practicing', action: finish }
+    ready
+      ? { title: 'Explore my practice', action: finish }
       : state === 'blocked'
         ? { title: 'Open Settings', action: () => Linking.openSettings() }
         : state === 'restricted'
           ? { title: 'Continue', action: finish }
-          : { title: 'Allow microphone access', action: request };
+          : { title: 'Enable microphone & speech', action: request };
 
   const note = writeFailed
     ? 'Clarity could not finish setting up on this device. Tap again to retry.'
@@ -118,7 +136,8 @@ export default function MicrophoneStep() {
       <Pressable
         accessibilityRole="button"
         onPress={finish}
-        style={({ pressed }) => [styles.textButton, { opacity: pressed ? 0.6 : 1 }]}>
+        disabled={requesting}
+        style={({ pressed }) => [styles.textButton, { opacity: pressed ? onboarding.pressedOpacity : 1 }]}>
         <ThemedText variant="subhead" tone="secondary">
           {state === 'blocked' ? 'Continue without it' : 'Not now'}
         </ThemedText>
@@ -127,25 +146,27 @@ export default function MicrophoneStep() {
 
   return (
     <OnboardingScreen
-      title="Clarity needs to hear you"
-      subtitle="Your device will ask for each permission in its own dialog."
-      ctaTitle={cta.title}
+      title={ready ? 'Your practice is ready' : 'Let Clarity hear you'}
+      subtitle={ready
+        ? 'Start with a short passage or speak freely. Your first session is up to you.'
+        : 'Enable your microphone and speech recognition to get feedback. Your device may ask for each separately.'}
+      ctaTitle={requesting ? 'Waiting for permission…' : state === 'checking' ? 'Checking access…' : cta.title}
       onContinue={cta.action}
-      ctaDisabled={state === 'checking'}
+      ctaDisabled={state === 'checking' || requesting}
       note={note}
       footer={footer}>
       <View style={styles.rows}>
         {ROWS.map((row) => (
           <View key={row.text} style={styles.row}>
-            <HugeiconsIcon icon={row.icon} size={24} color={colors.secondary} />
-            <ThemedText variant="bodyProse" tone="secondary" style={styles.rowText}>
+            <HugeiconsIcon icon={row.icon} size={onboarding.iconSize} color={colors.secondary} />
+            <ThemedText variant="subheadProse" tone="secondary" style={styles.rowText}>
               {row.text}
             </ThemedText>
           </View>
         ))}
-        {state === 'granted' || state === 'simulated' ? (
+        {ready ? (
           <View style={styles.row}>
-            <HugeiconsIcon icon={Tick02Icon} size={24} color={colors.accent} />
+            <HugeiconsIcon icon={Tick02Icon} size={onboarding.iconSize} color={colors.accent} />
             <ThemedText variant="bodyProse" style={styles.rowText}>
               {state === 'simulated'
                 ? 'Scripted speech is ready for simulator testing.'

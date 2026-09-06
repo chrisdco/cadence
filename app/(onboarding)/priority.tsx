@@ -32,8 +32,8 @@ export default function PriorityStep() {
 
   return (
     <OnboardingScreen
-      title="What do you want to work on?"
-      subtitle="Clarity starts you here. Once you have a few sessions, your own results take over."
+      title="Find your focus"
+      subtitle="Choose what you'd like to improve. Your practice will adapt as you complete sessions."
       ctaTitle="Continue"
       onContinue={() => {
         // "Not sure yet" stores null, which is also the untouched default, so
@@ -62,7 +62,7 @@ export default function PriorityStep() {
         <OptionCard selected={notSure} accessibilityLabel="Not sure yet" onSelect={() => choose(null)}>
           <ChoiceRow
             title="Not sure yet"
-            caption="Start with a mix and let Clarity work it out."
+            caption="Try a mix and find your focus."
             selected={notSure}
           />
         </OptionCard>
@@ -73,6 +73,6 @@ export default function PriorityStep() {
 
 const styles = StyleSheet.create({
   list: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
 });

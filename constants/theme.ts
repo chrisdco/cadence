@@ -22,6 +22,7 @@ export { fontAssets } from './font-assets';
 export { fonts, type FontFace, type FontFaceName } from './fonts';
 export { marketing } from './marketing';
 export { motion, springs } from './motion';
+export { onboarding } from './onboarding';
 export { radius } from './radius';
 export { spacing, TAB_BAR_SCROLL_INSET } from './spacing';
 export { type, type TypeVariant } from './typography';

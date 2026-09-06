@@ -22,8 +22,8 @@ export default function AccentStep() {
 
   return (
     <OnboardingScreen
-      title="Which accent do you speak?"
-      subtitle="Your reading is scored against this accent. Picking the one you actually speak stops your own vowels being counted as mistakes."
+      title="Which accent feels closest?"
+      subtitle="Choose the closest match to how you speak. We use it to give you fairer pronunciation feedback."
       ctaTitle="Continue"
       onContinue={() => {
         // Continue confirms the accent, including the preselected one nobody
@@ -39,7 +39,7 @@ export default function AccentStep() {
         writeFailed
           ? 'That choice could not be saved. Your device may be out of storage.'
           : !hasPhonemeDetail(accentLocale)
-            ? 'Per-sound feedback, the tips that name a sound like /θ/, is available for American English only. You still get word and syllable scores.'
+            ? 'Sound-by-sound tips are available for American English. This accent still includes word and syllable scores.'
             : null
       }>
       <View style={styles.list}>
@@ -62,6 +62,6 @@ export default function AccentStep() {
 
 const styles = StyleSheet.create({
   list: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
 });
