@@ -6,9 +6,9 @@ import { AiCoachingCard } from '@/components/session/ai-coaching-card';
 import { useProAccess } from '@/hooks/use-pro-access';
 import { usePaywall } from '@/hooks/use-paywall';
 import { spacing } from '@/constants/theme';
-import { PremiumError, cachedFeedback, getPremiumIdentity, isUpgradeError, type PremiumContext } from '@/services/pro-access';
+import { PremiumError, cachedFeedback, getPremiumIdentity, isUpgradeError } from '@/services/pro-access';
 import { saveAssessment } from '@/services/assessments';
-import { proEvent } from '@/services/observe-events';
+import { beginFeedbackOperation, telemetryFailure } from '@/services/observe-events';
 import type { SessionResult } from '@/types/session';
 
 export function PremiumFeedback({ result, recordId, onResult }: { result: SessionResult; recordId: string | null; onResult: (result: SessionResult, recordId: string | null) => void }) {
@@ -20,7 +20,8 @@ export function PremiumFeedback({ result, recordId, onResult }: { result: Sessio
   const [locked, setLocked] = useState(false);
   const inFlight = useRef(false);
   const alive = useRef(true);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  const operation = useRef<ReturnType<typeof beginFeedbackOperation> | null>(null);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; operation.current?.finish('cancelled', 'screen_left'); }; }, []);
   const context = result.premiumContext;
   const saved = context && cachedFeedback(`coach/${context.sessionKey}/${result.source}`);
   const allowed = access.isPro || !!context?.grantId || !!saved;
@@ -31,13 +32,21 @@ export function PremiumFeedback({ result, recordId, onResult }: { result: Sessio
     setProcessing(true);
     setError(null);
     setRecordingMissing(false);
+    const telemetry = beginFeedbackOperation('assessment', { attemptId: result.telemetryAttemptId, previewId: result.telemetryPreviewId, mode: result.mode ?? 'passage', preview: !!context.grantId });
+    operation.current = telemetry;
+    let saving = false;
     try {
       const assessed = await result.assess(context);
-      if (!alive.current || owner !== getPremiumIdentity()) return;
+      if (!alive.current || owner !== getPremiumIdentity()) {
+        telemetry.finish('cancelled', 'screen_or_account_changed');
+        return;
+      }
+      saving = true;
       if (recordId) saveAssessment(recordId, context.sessionKey, assessed);
-      onResult(assessed, recordId);
-      if (context.grantId) proEvent('preview_completed');
+      telemetry.finish('completed');
+      onResult({ ...assessed, mode: result.mode, telemetryAttemptId: result.telemetryAttemptId, telemetryPreviewId: result.telemetryPreviewId }, recordId);
     } catch (cause) {
+      telemetry.finish('failed', saving ? 'persistence_failed' : telemetryFailure(cause));
       if (!alive.current) return;
       if (isUpgradeError(cause)) setLocked(true);
       else {

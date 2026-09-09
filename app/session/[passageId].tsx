@@ -38,7 +38,7 @@ function dismissToHome() {
 const CONTENT_TOP_GAP = 82;
 
 export default function PracticeScreen() {
-  const { passageId, preview, sessionKey, grantId } = useLocalSearchParams<{ passageId: string; preview?: string; sessionKey?: string; grantId?: string }>();
+  const { passageId, preview, sessionKey, grantId, telemetryPreviewId } = useLocalSearchParams<{ passageId: string; preview?: string; telemetryPreviewId?: string; sessionKey?: string; grantId?: string }>();
   const previewActive = useRef(preview === '1' && !!sessionKey && !!grantId);
   const found = getAnyPassage(passageId);
   // Hooks must run unconditionally; the guard effect below backs out of the
@@ -85,16 +85,6 @@ export default function PracticeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Results screen's Retry bumps the token; restart a fresh attempt.
-  const prevRetryRef = useRef(retryToken);
-  useEffect(() => {
-    if (retryToken === prevRetryRef.current) return;
-    prevRetryRef.current = retryToken;
-    navigatedRef.current = false;
-    previewActive.current = false;
-    sessionRef.current.restart();
-  }, [retryToken]);
-
   const meta = useMemo(
     () => ({
       mode: modeForId(passage.id),
@@ -111,6 +101,9 @@ export default function PracticeScreen() {
   // has to clear the checkpoint once it has written its record.
   const checkpoint = useSessionCheckpoint({
     status: session.status,
+    error: session.error,
+    retryToken,
+    previewId: previewActive.current ? telemetryPreviewId : undefined,
     elapsedMs: session.elapsedMs,
     spokenWords: session.currentWordIndex,
     fillerCount: session.fillerCount,
@@ -118,25 +111,36 @@ export default function PracticeScreen() {
     onBackground: () => sessionRef.current.pause(),
   });
 
+  // Results screen's Retry bumps the token; restart a fresh attempt.
+  const prevRetryRef = useRef(retryToken);
+  useEffect(() => {
+    if (retryToken === prevRetryRef.current) return;
+    prevRetryRef.current = retryToken;
+    navigatedRef.current = false;
+    previewActive.current = false;
+    sessionRef.current.restart();
+  }, [retryToken]);
+
   const finishSession = useCallback(
     async (endedReason: SessionEndedReason = 'stopped') => {
       if (navigatedRef.current) return;
       navigatedRef.current = true;
+      const attempt = checkpoint.attempt;
       try {
         const result = await sessionRef.current.stop();
         // Once per attempt (navigatedRef); each retry becomes its own record.
-        const written = recordSession(result, { ...meta, endedReason });
+        const written = recordSession(result, { ...meta, attempt, endedReason });
         // The attempt is on disk, so the crash checkpoint has nothing left to
         // protect. Pushing Results does NOT unmount this screen, so without this
         // the checkpoint would survive and be recovered as a duplicate record.
         checkpoint.end();
-        setResult({ ...result, ...(previewActive.current && sessionKey && grantId ? { premiumContext: { sessionKey, grantId } } : {}) }, written.ok ? written.record.id : null);
+        setResult({ ...result, telemetryAttemptId: attempt.id, mode: meta.mode, ...(previewActive.current ? { telemetryPreviewId } : {}), ...(previewActive.current && sessionKey && grantId ? { premiumContext: { sessionKey, grantId } } : {}) }, written.ok ? written.record.id : null);
         router.push('/session/results');
       } catch {
         navigatedRef.current = false;
       }
     },
-    [setResult, meta, checkpoint, sessionKey, grantId],
+    [setResult, meta, checkpoint, sessionKey, grantId, telemetryPreviewId],
   );
 
   useEffect(() => {
@@ -158,6 +162,7 @@ export default function PracticeScreen() {
   const handleDismiss = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const s = sessionRef.current;
+    const attempt = checkpoint.attempt;
     const live = s.status === 'listening' || s.status === 'paused';
     // Stop the 'done' effect from also pushing the results screen.
     navigatedRef.current = true;
@@ -169,7 +174,7 @@ export default function PracticeScreen() {
       // mid-`stop()` still recovers these minutes.
       void s
         .stop()
-        .then((result) => recordSession(result, { ...meta, endedReason: 'abandoned' }))
+        .then((result) => recordSession(result, { ...meta, attempt, endedReason: 'abandoned' }))
         .catch(() => {})
         .finally(() => checkpoint.end());
     } else {
@@ -207,20 +212,22 @@ export default function PracticeScreen() {
   const handleRestart = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const s = sessionRef.current;
+    const attempt = checkpoint.attempt;
     if (s.status !== 'listening' && s.status !== 'paused') {
       navigatedRef.current = false;
+      checkpoint.begin();
       s.restart();
       return;
     }
     navigatedRef.current = true;
     void s
       .stop()
-      .then((result) => recordSession(result, { ...meta, endedReason: 'abandoned' }))
+      .then((result) => recordSession(result, { ...meta, attempt, endedReason: 'abandoned' }))
       .catch(() => {})
       .finally(() => {
         navigatedRef.current = false;
-        sessionRef.current.restart();
         checkpoint.begin();
+        sessionRef.current.restart();
       });
   }, [meta, checkpoint]);
 

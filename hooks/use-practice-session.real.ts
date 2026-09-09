@@ -15,7 +15,6 @@ import {
 
 import { PREVIEW_MS } from '@/convex/proPolicy';
 import { PremiumError } from '@/services/pro-access';
-import { modeForId } from '@/lib/passage-catalog';
 import { tokenizePassage } from '@/lib/passage-text';
 import { PassageAligner } from '@/services/alignment';
 import { assessSession } from '@/services/azure-pronunciation';
@@ -26,10 +25,8 @@ import {
 } from '@/services/live-recognition';
 import {
   audioProcessingFailed,
-  practiceFailed,
   recognitionFallback,
   scoringDegraded,
-  type ScoringDegradedReason,
 } from '@/services/observe-events';
 import { claimEngine, releaseEngine } from '@/services/recognition-owner';
 import { getAccentLocale } from '@/services/settings';
@@ -269,7 +266,6 @@ export function usePracticeSession(passage: Passage): PracticeSession {
     if (mounted.current) setError({ code, message });
     // The error UI tells the user; this tells us. Which code dominates decides
     // whether the fix is the permission ask, the device matrix, or the engine.
-    practiceFailed({ code, mode: modeForId(passage.id) });
     setStatusSafe('error');
   };
 
@@ -422,7 +418,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
         // Simulators often lack on-device model assets — retry network-based.
         m.retriedNetwork = true;
         m.mode = 'network';
-        recognitionFallback({ reason: event.error });
+        recognitionFallback({ mode: 'passage', reason: event.error });
         return; // the trailing `end` event performs the restart
       }
       fail('recognition-unavailable', event.message || 'Speech recognition is unavailable on this device.');
@@ -452,7 +448,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
     if (m.mode === 'on-device' && !m.retriedNetwork && m.lastTransientError) {
       m.retriedNetwork = true;
       m.mode = 'network';
-      recognitionFallback({ reason: m.lastTransientError.code });
+      recognitionFallback({ mode: 'passage', reason: m.lastTransientError.code });
       m.lastTransientError = null;
       startRecognition(m.mode);
       return;
@@ -592,7 +588,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
       // Scores survive this, so nothing surfaces to the user: the attempt just
       // silently loses playback and falls back to a meter-derived waveform. The
       // event says how often; the reported error says which call threw.
-      audioProcessingFailed({ segments: m.segmentUris.length });
+      audioProcessingFailed({ mode: 'passage', segments: m.segmentUris.length });
       Observe.reportError(e);
       audioUri = null;
       waveform = null;
@@ -779,6 +775,7 @@ export function usePracticeSession(passage: Passage): PracticeSession {
           Observe.reportError(e);
           scoringDegraded({
             reason: 'processing-failed',
+            mode: 'passage',
             locale: getAccentLocale(),
             durationMs: Math.max(1, Math.round(m.accumulatedActiveMs)),
           });

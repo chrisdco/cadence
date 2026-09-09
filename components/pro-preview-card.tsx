@@ -6,7 +6,7 @@ import { spacing } from '@/constants/theme';
 import { PASSAGES } from '@/constants/passages';
 import { useProAccess } from '@/hooks/use-pro-access';
 import { beginPreview, newOperationId } from '@/services/pro-access';
-import { proEvent } from '@/services/observe-events';
+import { newTelemetryId, proEvent, telemetryFailure } from '@/services/observe-events';
 
 export function ProPreviewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const access = useProAccess();
@@ -15,11 +15,14 @@ export function ProPreviewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const start = async () => {
     if (busy) return;
     setBusy(true);
+    const previewId = newTelemetryId();
+    proEvent('preview_requested', { previewId });
     try {
       const context = await beginPreview(newOperationId());
-      proEvent('preview_started');
-      router.push({ pathname: '/session/[passageId]', params: { passageId: PASSAGES[0].id, preview: '1', sessionKey: context.sessionKey, grantId: context.grantId } });
+      proEvent('preview_started', { previewId });
+      router.push({ pathname: '/session/[passageId]', params: { passageId: PASSAGES[0].id, preview: '1', telemetryPreviewId: previewId, sessionKey: context.sessionKey, grantId: context.grantId } });
     } catch (error) {
+      proEvent('preview_failed', { previewId, reason: telemetryFailure(error) });
       Alert.alert('Free feedback', error instanceof Error ? error.message : 'Please try again.');
     } finally { setBusy(false); }
   };
