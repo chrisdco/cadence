@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import { router } from 'expo-router';
 import { GlassSurface, PrimaryButton, ThemedText } from '@/components/ui';
 import { AiCoachingCard } from '@/components/session/ai-coaching-card';
-import { ProPreviewCard } from '@/components/pro-preview-card';
 import { useProAccess } from '@/hooks/use-pro-access';
 import { usePaywall } from '@/hooks/use-paywall';
 import { spacing } from '@/constants/theme';
@@ -52,17 +51,14 @@ export function PremiumFeedback({ result, recordId, onResult }: { result: Sessio
   }, [context, onResult, recordId, result]);
   useEffect(() => { if (allowed && !locked && !saved) void assess(); }, [allowed, assess, locked, saved]);
   if (result.spokenWords <= 0) return null;
-  if (!allowed || locked) return <View style={{ gap: spacing.lg }}>
-    <GlassSurface style={{ padding: spacing.lg }}>
-      <View style={{ gap: spacing.md }}>
-        <ThemedText variant="title3">Personal feedback with Clarity Pro</ThemedText>
-        <ThemedText variant="bodyProse" tone="secondary">{result.mode === 'freestyle' ? 'Get practical coaching on your pace, filler words, and how you express your ideas.' : 'Find the sounds to work on and get practice tailored to this recording.'}</ThemedText>
-        <PrimaryButton title="Unlock feedback" size="md" onPress={() => { void requirePro(async () => { setLocked(false); await assess(); }, 'coach').catch(cause => setError(String(cause))); }} />
-        {error ? <ThemedText variant="footnote" tone="secondary">{error}</ThemedText> : null}
-      </View>
-    </GlassSurface>
-    <ProPreviewCard />
-  </View>;
+  if (!allowed || locked) return <GlassSurface style={{ padding: spacing.lg }}>
+    <View style={{ gap: spacing.md }}>
+      <ThemedText variant="title3">Personal feedback with Clarity Pro</ThemedText>
+      <ThemedText variant="bodyProse" tone="secondary">{result.mode === 'freestyle' ? 'Get practical coaching on your pace, filler words, and how you express your ideas.' : 'Find the sounds to work on and get practice tailored to this recording.'}</ThemedText>
+      <PrimaryButton title="Unlock feedback" size="md" onPress={() => { void requirePro(async () => { setLocked(false); await assess(); }, 'coach').catch(cause => setError(String(cause))); }} />
+      {error ? <ThemedText variant="footnote" tone="secondary">{error}</ThemedText> : null}
+    </View>
+  </GlassSurface>;
   if (processing) return <ThemedText variant="bodyProse" tone="secondary">Analyzing your pronunciation… Your basic results are saved.</ThemedText>;
   if (error) return <View style={{ gap: spacing.md }}>
     <ThemedText variant="bodyProse" tone="secondary">{error}</ThemedText>

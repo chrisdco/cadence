@@ -43,7 +43,7 @@ export default function SavedFeedbackScreen() {
     return () => { stopFeedback(); stopIdentity(); };
   }, []);
   return <>
-    <Stack.Screen options={{ title: 'Saved feedback', headerShown: true }} />
+    <Stack.Screen options={{ headerTitle: () => <ThemedText variant="title3" weight="semibold">Saved feedback</ThemedText> }} />
     <FlatList data={entries} keyExtractor={entry => entry.key} renderItem={({ item }) => <SavedReport entry={item} />}
       contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: spacing.xl, gap: spacing.lg }}
       ListHeaderComponent={<ThemedText variant="bodyProse" tone="secondary">Completed reports stay yours to read, including on the free plan. Earlier sessions without saved feedback are not reanalyzed.</ThemedText>}

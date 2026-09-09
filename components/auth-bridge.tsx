@@ -39,6 +39,7 @@ export function AuthBridge() {
 
   useEffect(() => {
     if (!isLoaded) return;
+    let cancelled = false;
     const current = isSignedIn && userId ? userId : null;
     const previous = getLastSignedInUserId();
     setLastSignedInUserId(current);
@@ -53,7 +54,7 @@ export function AuthBridge() {
           .then((customerInfo) => {
             // null means purchases are unavailable in this build, so nothing
             // was linked and the marker stays clear for the next attempt.
-            if (customerInfo) setIdentifiedPurchaserId(current);
+            if (!cancelled && customerInfo && getLastSignedInUserId() === current) setIdentifiedPurchaserId(current);
           })
           .catch((error) => console.warn('[auth] identifyPurchaser failed', error));
       }
@@ -63,6 +64,7 @@ export function AuthBridge() {
       setIdentifiedPurchaserId(null);
       forgetPurchaser().catch((error) => console.warn('[auth] forgetPurchaser failed', error));
     }
+    return () => { cancelled = true; };
   }, [isLoaded, isSignedIn, userId]);
 
   return null;

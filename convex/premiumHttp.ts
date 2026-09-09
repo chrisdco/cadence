@@ -6,6 +6,7 @@ import type { Id } from './_generated/dataModel';
 import type { ActionCtx } from './_generated/server';
 import { refreshCaller } from './billing';
 import { requireUserId } from './lib';
+import { readBoundedBody } from './requestBody';
 import { wavDuration } from './proPolicy';
 import type { PremiumFeature } from './proPolicy';
 import * as coach from './coachPrompt';
@@ -14,6 +15,7 @@ import * as passage from './passagePrompt';
 const wordSchema = z.object({ word: z.string().trim().min(1).max(40), locale: z.enum(['en-US', 'en-GB', 'en-AU', 'en-CA', 'en-IN']).default('en-US') }).strict();
 const locales = new Set(['en-US', 'en-GB', 'en-AU', 'en-CA', 'en-IN']);
 const errors: Record<string, [number, string]> = {
+  account_deleting: [403, 'Account deletion has started. Finish deleting your account in Settings.'],
   authentication_required: [401, 'Sign in to use personal feedback.'], upgrade_required: [403, 'Clarity Pro unlocks this feature.'],
   preview_exhausted: [403, 'Your free feedback allowance has been used. Basic practice is always available.'],
   preview_expired: [403, 'Start a new free feedback session.'], processing: [202, 'Your feedback is processing.'],
@@ -44,15 +46,14 @@ export async function processPremium(ctx: ActionCtx, request: Request, feature: 
     const operation = header(request, 'X-Operation-Id');
     const sessionKey = header(request, 'X-Session-Key');
     const grantId = request.headers.get('X-Preview-Id') as Id<'previewGrants'> | null;
-    const bytes = new Uint8Array(await request.arrayBuffer());
-    if (bytes.length > (feature === 'assessment' ? 950_000 : 20_000)) throw new Error('invalid_request');
+    const bytes = await readBoundedBody(request, feature === 'assessment' ? 950_000 : 20_000);
     let parsed: unknown;
     let durationMs = 0;
     let audioKey = '';
     let reference = '';
     let locale = 'en-US';
     if (feature === 'assessment') {
-      try { durationMs = wavDuration(bytes); } catch { throw new Error('invalid_request'); }
+      try { durationMs = wavDuration(bytes, true); } catch { throw new Error('invalid_request'); }
       reference = decodeURIComponent(header(request, 'X-Reference-Text', 16_000));
       locale = header(request, 'X-Accent-Locale');
       if (!locales.has(locale) || reference.length > 4_000) throw new Error('invalid_request');

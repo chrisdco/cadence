@@ -169,7 +169,7 @@ export default function AnalyticsScreen() {
       <IntroReveal order={1} style={styles.control}>
         <SegmentedControl segments={RANGES} selectedIndex={range} onChange={changeRange} />
       </IntroReveal>
-      <PrimaryButton title="Saved feedback" size="md" onPress={() => router.push('/feedback')} />
+      <PrimaryButton title="Saved feedback" size="md" style={styles.sectionCard} onPress={() => router.push('/feedback')} />
     </>
   );
 

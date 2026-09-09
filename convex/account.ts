@@ -1,11 +1,16 @@
 import { v } from 'convex/values';
 
-import { mutation } from './_generated/server';
+import { internalQuery, mutation } from './_generated/server';
 import { requireUserId } from './lib';
 
 /** Bounded so one call cannot exceed a mutation's read/write limits. The client
  * loops until `done`. */
 const BATCH = 200;
+
+export const isDeleting = internalQuery({
+  args: { owner: v.string() }, returns: v.boolean(),
+  handler: async (ctx, { owner }) => !!await ctx.db.query('accountDeletions').withIndex('by_owner', q => q.eq('owner', owner)).unique(),
+});
 
 /**
  * Account deletion, required by App Store guideline 5.1.1(v). The app calls
@@ -16,7 +21,12 @@ export const deleteAll = mutation({
   args: {},
   returns: v.object({ deleted: v.number(), done: v.boolean() }),
   handler: async (ctx) => {
-    const userId = await requireUserId(ctx);
+    const userId = await requireUserId(ctx, { allowDeleting: true });
+    // Retain only an opaque account-id tombstone. Other devices, unexpired
+    // JWTs and delayed billing webhooks cannot repopulate a deleted account or
+    // reset its welcome allowance. Repeated deletion calls remain available.
+    const deletion = await ctx.db.query('accountDeletions').withIndex('by_owner', q => q.eq('owner', userId)).unique();
+    if (!deletion) await ctx.db.insert('accountDeletions', { owner: userId, startedAt: Date.now() });
     let budget = BATCH;
     let deleted = 0;
 

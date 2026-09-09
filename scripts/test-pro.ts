@@ -43,6 +43,9 @@ view.setUint32(4, wav.length - 8, true);
 view.setUint16(20, 1, true); view.setUint16(22, 1, true); view.setUint32(24, 16000, true); view.setUint32(28, 32000, true);
 view.setUint16(32, 2, true); view.setUint16(34, 16, true); tag(36, 'data'); view.setUint32(40, 32000, true);
 assert(wavDuration(wav) === 1000, 'Duration comes from validated PCM bytes');
+try { wavDuration(wav, true); throw new Error('accepted silence'); } catch (e) { assert(String(e).includes('Silent WAV'), 'Digital silence rejected before provider request'); }
+view.setInt16(44, 1, true);
+assert(wavDuration(wav, true) === 1000, 'Quiet audio is not rejected by an amplitude threshold');
 view.setUint32(24, 8000, true);
 try { wavDuration(wav); throw new Error('accepted invalid WAV'); } catch (e) { assert(String(e).includes('Unsupported WAV'), 'Reject unsupported format'); }
 

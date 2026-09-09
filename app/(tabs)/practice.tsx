@@ -106,8 +106,8 @@ export default function PracticeScreen() {
         </IntroReveal>
       </View>
 
+      <ProPreviewCard style={{ marginTop: spacing.xl }} />
       {/* Recommended: real-data picks; glass cards → transform-only reveal. */}
-      <ProPreviewCard />
       <IntroReveal order={1}>
         <SectionHeader
           title="For you"

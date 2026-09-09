@@ -21,6 +21,17 @@ concurrency:
   group: ${{ workflow.filename }}-${{ github.ref }}
 
 jobs:
+  checks:
+    name: Validate security and app regressions
+    environment: production
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - name: Type checks and regression tests
+        run: |
+          bun run typecheck
+          bun run test
+
   fingerprint:
     name: Fingerprint native layer
     type: fingerprint
@@ -31,7 +42,7 @@ jobs:
   get_ios_build:
     name: Find an OTA-compatible iOS build
     type: get-build
-    needs: [fingerprint]
+    needs: [checks, fingerprint]
     params:
       platform: ios
       profile: production

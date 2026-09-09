@@ -23,6 +23,7 @@ import type * as premiumHttp from "../premiumHttp.js";
 import type * as pro from "../pro.js";
 import type * as proPolicy from "../proPolicy.js";
 import type * as proTables from "../proTables.js";
+import type * as requestBody from "../requestBody.js";
 import type * as sessions from "../sessions.js";
 import type * as settings from "../settings.js";
 import type * as supplements from "../supplements.js";
@@ -49,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   pro: typeof pro;
   proPolicy: typeof proPolicy;
   proTables: typeof proTables;
+  requestBody: typeof requestBody;
   sessions: typeof sessions;
   settings: typeof settings;
   supplements: typeof supplements;

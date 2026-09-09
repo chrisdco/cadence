@@ -89,11 +89,13 @@ async function play(uri: string): Promise<void> {
  * it does not wait for the clip to finish.
  */
 export async function speakWord(word: string): Promise<void> {
+  const owner = getLastSignedInUserId();
   const file = clipFile(word);
   // Preserve audio unlocked before account-specific caching was introduced.
   const legacy = new File(Paths.cache, `pronounce-${encodeURIComponent(word.toLowerCase())}.mp3`);
   if (!file.exists && legacy.exists) { await play(legacy.uri); return; }
   if (!file.exists) await fetchPronunciation(word, file);
+  if (owner !== getLastSignedInUserId()) throw new Error('Your account changed. Please try again.');
   await play(file.uri);
 }
 

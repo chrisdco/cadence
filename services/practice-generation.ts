@@ -1,5 +1,5 @@
 import { addPassage } from '@/services/user-passages';
-import { getPreviewContext, newOperationId, premiumHeaders, requestPremium } from '@/services/pro-access';
+import { getPremiumIdentity, getPreviewContext, newOperationId, premiumHeaders, requestPremium } from '@/services/pro-access';
 /** Generated exercises are saved in the personal library for later practice. */
 import type { Passage } from '@/types/session';
 
@@ -7,15 +7,17 @@ import type { Passage } from '@/types/session';
 const TARGET_WPM = 120;
 
 let current: Passage | null = null;
+let currentOwner: string | null = null;
 
 /** Resolver for lib/passage-catalog.ts; only the latest generation is live. */
 export function getGeneratedPassage(id: string | undefined): Passage | undefined {
-  return current && current.id === id ? current : undefined;
+  return currentOwner === getPremiumIdentity() && current && current.id === id ? current : undefined;
 }
 
 export async function generateWordPracticePassage(
   words: readonly string[],
 ): Promise<Passage> {
+  const owner = getPremiumIdentity();
   const operationId = newOperationId();
   const context = getPreviewContext() ?? { sessionKey: operationId };
   const response = await requestPremium('/api/practice-passage', {
@@ -47,8 +49,10 @@ export async function generateWordPracticePassage(
   }
 
   const { title, text } = payload as { title: string; text: string };
+  if (owner !== getPremiumIdentity()) throw new Error('Your account changed. Please try again.');
   // Earned exercises live in the existing personal library and sync like other passages.
   current = addPassage({ title: title.trim(), text: text.trim(), targetWpm: TARGET_WPM });
+  currentOwner = owner;
   if (!current) throw new Error('The exercise could not be saved. Please try again.');
 
   return current;

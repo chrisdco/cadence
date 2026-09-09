@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, View, type StyleProp, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { GlassSurface, PrimaryButton, ThemedText } from '@/components/ui';
 import { spacing } from '@/constants/theme';
@@ -8,7 +8,7 @@ import { useProAccess } from '@/hooks/use-pro-access';
 import { beginPreview, newOperationId } from '@/services/pro-access';
 import { proEvent } from '@/services/observe-events';
 
-export function ProPreviewCard() {
+export function ProPreviewCard({ style }: { style?: StyleProp<ViewStyle> }) {
   const access = useProAccess();
   const [busy, setBusy] = useState(false);
   if (access.isPro) return null;
@@ -23,7 +23,7 @@ export function ProPreviewCard() {
       Alert.alert('Free feedback', error instanceof Error ? error.message : 'Please try again.');
     } finally { setBusy(false); }
   };
-  return <GlassSurface style={{ padding: spacing.lg, marginBottom: spacing.xl }}>
+  return <GlassSurface style={[{ padding: spacing.lg, marginBottom: spacing.xl }, style]}>
     <View style={{ gap: spacing.md }}>
       <ThemedText variant="title3">Try personal feedback</ThemedText>
       <ThemedText variant="bodyProse" tone="secondary">

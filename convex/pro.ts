@@ -88,10 +88,16 @@ export const reserve = internalMutation({
         if (args.durationMs + used.reduce((sum, o) => sum + o.durationMs, 0) > PREVIEW_MS) return deny('preview_exhausted');
       } else if (used.length >= (args.feature === 'pronunciation' ? 5 : 1)) return deny('preview_exhausted');
       if (args.feature === 'coach' && args.durationMs > PREVIEW_MS) return deny('preview_exhausted');
+      // A job started near the reservation deadline still owns its slot until
+      // it settles. Otherwise another device can reserve the same welcome slot.
+      if (!grant.committed) await ctx.db.patch(grant._id, { leaseUntil: Math.max(grant.leaseUntil, now + OPERATION_LEASE_MS) });
     }
     // A burst constraint, not a subscription allowance. Finished work is never counted here.
     const recent = await ctx.db.query('premiumOperations').withIndex('by_owner', q => q.eq('owner', owner).gt('_creationTime', now - OPERATION_LEASE_MS)).collect();
-    const running = recent.filter(o => o._id !== previous?._id && o.status === 'running' && o.leaseUntil > now);
+    // Retries keep their original creation time, so a creation-time window
+    // alone misses old operations that are actively running again.
+    const active = await ctx.db.query('premiumOperations').withIndex('by_owner_lease', q => q.eq('owner', owner).gt('leaseUntil', now)).collect();
+    const running = active.filter(o => o._id !== previous?._id && o.status === 'running');
     if (args.feature === 'assessment') {
       const job = await ctx.db.query('assessmentJobs').withIndex('by_owner', q => q.eq('owner', owner)).unique();
       if (job && job.leaseUntil > now && job.sessionKey !== args.sessionKey) return deny('processing');

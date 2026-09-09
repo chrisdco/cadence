@@ -1,6 +1,6 @@
 # Clarity Pro implementation status
 
-Updated September 8, 2026. Backend and protected web adapters deployed; updated native client not publicly released by this task.
+Updated September 9, 2026 UTC. Backend and protected web adapters deployed; updated native client not publicly released by this task. The later security review in `../security-review/report.md` is the current release-readiness assessment.
 
 ## Implemented
 
@@ -19,10 +19,10 @@ Updated September 8, 2026. Backend and protected web adapters deployed; updated 
 | --- | --- |
 | RevenueCat entitlement | `Clarity Pro` includes `clarity_pro_yearly`, `clarity_pro_monthly`, `clarity_pro_weekly` |
 | RevenueCat development webhook | `Clarity Convex — Development`, Sandbox, authenticated, test delivery HTTP 200 |
-| RevenueCat production webhook | `Clarity Convex — Production`, Production, authenticated, test delivery HTTP 200 |
+| RevenueCat production webhook | `Clarity Convex — Production`, Production and Sandbox, authenticated; Apple sandbox is explicitly enabled for TestFlight; Test Store remains blocked |
 | Convex development | `adorable-rat-131`, latest backend deployed |
 | Convex production | `enduring-kangaroo-904`, latest backend deployed with type checking |
-| EAS Hosting | Protected adapters deployed to `https://clarityapp.expo.app`, deployment `qry8jtdklx`; eighteen unsafe versions retired; two identifiers replaced with protected adapters. |
+| EAS Hosting | Protected adapters deployed to `https://clarityapp.expo.app`, latest deployment recorded in `../security-review/report.md`; eighteen unsafe versions retired; two identifiers replaced with protected adapters. |
 | AI Gateway | Created and validated a replacement `Clarity Convex` key using the authenticated Vercel CLI, updated both backends, and revoked the dedicated old `Speech App` key. Provider variables were removed from EAS. |
 | Azure | Both backends and ignored local server configuration now use Key 2. A fresh assessment with Key 2 returned Success. Previously bundled Key 1 still needs regeneration. |
 
@@ -33,7 +33,7 @@ Updated September 8, 2026. Backend and protected web adapters deployed; updated 
 ## Validation performed
 
 - App and Convex type checks passed.
-- Existing test suites: 627 checks passed. Focused premium tests: 68 checks passed. Total: 695.
+- Existing test suites: 627 checks passed. Focused premium tests: 70 checks passed. Security regressions: 59 checks passed. Total: 756.
 - Tests cover UTC reset, concurrent preview reservations, failed retries, abandoned reservations, account ownership/deletion, identical access for all three products beyond 120 minutes, account job queuing, saved response reuse, expired/grace subscriptions, Test Store isolation, stale reconciliation, transfers, duplicate webhooks, refunds and delayed renewals, and supplemental history replacement/recovery.
 - Live authenticated calls from the iOS development app succeeded for Azure pronunciation, AI coaching, exercise generation, and model pronunciation audio. Replaying model audio returned the cached result.
 - Live production calls without authentication returned `401 authentication_required` for all four provider routes, preview reservation, and status. Production had zero subscription rows after the Test Store checks.
@@ -44,12 +44,12 @@ Updated September 8, 2026. Backend and protected web adapters deployed; updated 
 
 ## Remaining release work
 
-**Legacy provider access disabled.** Expo confirmed deletion of the eighteen unsafe versions. Two identifiers were recreated with protected adapters. Some retired addresses still serve old route handlers, so the dedicated AI Gateway credential was also rotated and revoked. The final checks at 02:58 UTC on September 9 found no generated output: pronunciation and exercise returned 502; the old coaching stream returned HTTP 200 with zero bytes. Other retired addresses returned 404 or the protected adapter's 401. The current authenticated backend successfully generated an exercise with the replacement key. See `retired-deployments.json`. Expo could not reassociate the legacy subdomain because it reported the name as taken; the current `clarityapp` domain was preserved. Never restore the revoked gateway credential to recover a retired deployment.
+**Legacy provider access disabled.** Expo confirmed deletion of the eighteen unsafe versions. Two identifiers were recreated with protected adapters. Some retired addresses still serve old route handlers, so the dedicated AI Gateway credential was also rotated and revoked. The security-review recheck on September 9 found the old public hostname returned 404 on all three provider routes. The eighteen retired versions returned 401, 404, or 502 without generated output. The current authenticated backend successfully generated an exercise with the replacement key. See `retired-deployments.json`. Expo could not reassociate the legacy subdomain because it reported the name as taken; the current `clarityapp` domain was preserved. Never restore the revoked gateway credential to recover a retired deployment.
 
 1. **Regenerate Azure Key 1.** The backend is already using Key 2. The Azure tab in Dia is on speech-app-expo → Keys and Endpoint. Use Regenerate Key1 and complete Azure's confirmation. Computer-use policy requires the account owner to perform credential changes. Do not regenerate Key 2, which is now serving requests.
 2. **Apple subscription levels.** Annual remains level 1; monthly and weekly remain level 2. Apple's browser drag control repeatedly returned the item to its original position. No level change was saved. Put all three in level 1 before launch. [Subscription group](https://appstoreconnect.apple.com/apps/6800457983/distribution/subscription-groups/22323737).
 3. **Billing inputs and alert delivery.** Populate `AZURE_ASSESSMENT_USD_PER_HOUR` from the actual Azure agreement, including the prosody add-on, and `REVENUE_NET_SHARE` from actual net receipts after store/RevenueCat fees and applicable taxes. AI/TTS defaults are estimates and must be reconciled against actual invoices. Alerts currently appear in Convex logs and `costAlerts`; external alert delivery is not configured. Failed provider requests may still incur charges that the available response does not expose. Internal SDK retries are not individually metered.
-4. **Real device / TestFlight acceptance.** Perform all three Apple sandbox purchases, restore after reinstall, pending payment, renewal, grace, refund, transfer, account switching, offline basic practice, and interrupted recording/processing tests. Verify the 90-second preview and upgrading a real microphone recording end to end. Simulator provider checks used synthetic audio. Production rejects sandbox receipts; use the development backend with the App Store SDK key for sandbox testing, and verify production distribution separately.
+4. **Real device / TestFlight acceptance.** Perform all three Apple sandbox purchases, restore after reinstall, pending payment, renewal, grace, refund, transfer, account switching, offline basic practice, and interrupted recording/processing tests. Verify the 90-second preview and upgrading a real microphone recording end to end. Simulator provider checks used synthetic audio. Production now explicitly accepts verified Apple App Store sandbox receipts for TestFlight (`ALLOW_APP_STORE_SANDBOX=true`); Test Store receipts remain blocked, and sandbox transactions never count as earned revenue. Disable the beta exception before the paid App Store release.
 5. **Native client release.** Publish the updated native client against the production Convex URL after the preceding checks. The web forwarding adapters are deployed, and obsolete public Azure variables have been removed from EAS. No native client build, App Review submission, or native public release was performed by this task.
 
 ## Contribution model

@@ -96,7 +96,10 @@ export function premiumHeaders(operationId: string, context: PremiumContext): Re
   return { 'X-Operation-Id': operationId, 'X-Session-Key': context.sessionKey, ...(context.grantId ? { 'X-Preview-Id': context.grantId } : {}) };
 }
 export async function requestPremium(path: string, init: RequestInit, signal?: AbortSignal) {
+  const owner = identity;
   for (let attempt = 0; ; attempt++) {
+    if (owner !== identity) throw new PremiumError('authentication_required', 'Your account changed. Please try again.');
+    if (signal?.aborted) throw new Error('Cancelled');
     try { return await premiumFetch(path, { ...init, signal }); }
     catch (error) {
       const retryable = error instanceof PremiumError
