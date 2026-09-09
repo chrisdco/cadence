@@ -1,4 +1,4 @@
-import type { MutationCtx, QueryCtx } from './_generated/server';
+import type { ActionCtx, MutationCtx, QueryCtx } from './_generated/server';
 
 /**
  * The one place the caller's identity is read. Every function starts here and
@@ -8,7 +8,7 @@ import type { MutationCtx, QueryCtx } from './_generated/server';
  * `identity.subject` is the Clerk user id, the same value the app's auth bridge
  * keeps in MMKV as the synchronous sign-in flag.
  */
-export async function requireUserId(ctx: QueryCtx | MutationCtx): Promise<string> {
+export async function requireUserId(ctx: Pick<QueryCtx | MutationCtx | ActionCtx, 'auth'>): Promise<string> {
   const identity = await ctx.auth.getUserIdentity();
   if (identity === null) throw new Error('Not authenticated');
   return identity.subject;

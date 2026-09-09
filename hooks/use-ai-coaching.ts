@@ -31,13 +31,13 @@ export function useAiCoaching(result: SessionResult): AiCoachingState & {
     const timeout = setTimeout(() => {
       timedOut = true;
       controller.abort();
-    }, 30_000);
+    }, 180_000); // Includes the account queue and the bounded provider request.
     setState({ status: 'loading', breakdown: null, error: null });
 
     requestAiCoaching(result, controller.signal, (partial) => {
       if (controller.signal.aborted) return;
       setState({ status: 'streaming', breakdown: partial, error: null });
-    })
+    }, result.premiumContext)
       .then((breakdown) => {
         if (controller.signal.aborted) return;
         setState({ status: 'success', breakdown, error: null });

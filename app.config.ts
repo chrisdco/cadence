@@ -75,7 +75,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     name: getName(config.name ?? 'Clarity'),
     scheme: getScheme(baseScheme),
     runtimeVersion: {
-      policy: 'appVersion',
+      // Automatic production OTA delivery requires a native compatibility
+      // boundary even when the app's marketing version stays the same.
+      // Existing preview/development builds retain their appVersion runtime.
+      policy: process.env.APP_VARIANT === 'production' ? 'fingerprint' : 'appVersion',
     },
     updates: {
       ...config.updates,

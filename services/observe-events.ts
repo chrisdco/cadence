@@ -251,3 +251,8 @@ export function paywallResolved(a: { source: PaywallSource; outcome: string }) {
 // The events above stay separate from all three on purpose: a degraded score or
 // a paywall that would not present is a product outcome with structured
 // attributes, not an exception, and pooling them would bury both.
+
+/** Purchase funnel only: no recordings, transcripts, or user-authored content. */
+export function proEvent(event: 'feature_tapped' | 'paywall_viewed' | 'purchase_resolved' | 'activated' | 'preview_started' | 'preview_completed', attributes: Record<string, string | number | boolean> = {}) {
+  Observe.logEvent(`pro.${event}`, { displayName: `Clarity Pro ${event.replaceAll('_', ' ')}`, attributes });
+}

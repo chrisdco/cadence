@@ -20,6 +20,21 @@ export const deleteAll = mutation({
     let budget = BATCH;
     let deleted = 0;
 
+    const premiumQueries = [
+      () => ctx.db.query('subscriptions').withIndex('by_owner', q => q.eq('owner', userId)).take(budget),
+      () => ctx.db.query('previewGrants').withIndex('by_owner', q => q.eq('owner', userId)).take(budget),
+      () => ctx.db.query('premiumOperations').withIndex('by_owner', q => q.eq('owner', userId)).take(budget),
+      () => ctx.db.query('assessmentSupplements').withIndex('by_owner_updated', q => q.eq('owner', userId)).take(budget),
+      () => ctx.db.query('assessmentJobs').withIndex('by_owner', q => q.eq('owner', userId)).take(budget),
+      () => ctx.db.query('subscriptionRevenue').withIndex('by_owner', q => q.eq('owner', userId)).take(budget),
+    ];
+    for (const read of premiumQueries) {
+      if (budget <= 0) break;
+      const rows = await read();
+      for (const row of rows) await ctx.db.delete(row._id);
+      deleted += rows.length;
+      budget -= rows.length;
+    }
     const sessions = await ctx.db
       .query('sessions')
       .withIndex('by_user', (q) => q.eq('userId', userId))

@@ -220,7 +220,7 @@ function RootNavigator({ scheme }: { scheme: ColorSchemeName }) {
       </Stack.Protected>
 
       {/* A one-way corridor at the root: no swipe back toward sign-in. Movement
-          between steps is the nested stack's business. */}
+          between steps stays inside the onboarding pager. */}
       <Stack.Protected guard={signedIn && !onboarded}>
         <Stack.Screen
           name="(onboarding)"
@@ -306,7 +306,7 @@ function RootLayout() {
           error to Observe. Outside the providers so a throw in one of them is
           caught too, and outside the font gate so the fallback can render
           before the fonts land. */}
-      <ObserveErrorBoundary fallback={ObserveErrorFallback}>
+      <ObserveErrorBoundary fallback={(props) => <ObserveErrorFallback {...props} />}>
         {/* Keyboard frame tracking for `KeyboardStickyView`, so a committing
             button can ride the keyboard up frame-for-frame. */}
         <KeyboardProvider>

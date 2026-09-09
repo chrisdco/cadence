@@ -3,7 +3,11 @@ import { CheckmarkCircle02Icon, Crown02Icon } from '@hugeicons-pro/core-solid-ro
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { getPremiumIdentity, refreshProAccess } from '@/services/pro-access';
+import { getIdentifiedPurchaserId } from '@/services/auth-state';
+import { settlePaywall } from '@/services/paywall-intent';
+import { proEvent } from '@/services/observe-events';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -46,10 +50,10 @@ const PLAN_GAP = spacing.md;
 const INDICATOR_SIZE = 24;
 
 const FEATURES = [
-  'Unlimited practice sessions',
-  'Personal AI speech coaching',
-  'Full speaking analytics and history',
-  'Early access to new features',
+  'Unlimited personal AI coaching',
+  'Detailed pronunciation feedback',
+  'Practice built around your difficult words',
+  'Full progress comparisons',
 ];
 
 /** Display order and the per-card caption wording, keyed by package type. */
@@ -183,6 +187,11 @@ function PlanCard({
  */
 export default function PaywallScreen() {
   useMarkInteractive();
+  const { intentId, source } = useLocalSearchParams<{ intentId?: string; source?: string }>();
+  useEffect(() => {
+    proEvent('paywall_viewed', { source: source ?? 'explicit' });
+    return () => settlePaywall(intentId, false);
+  }, [intentId, source]);
 
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -203,9 +212,10 @@ export default function PaywallScreen() {
   // A purchase can land while the customer is also tapping the close button;
   // one latch keeps that from popping two screens.
   const dismissed = useRef(false);
-  const close = () => {
+  const close = (unlocked = false) => {
     if (dismissed.current) return;
     dismissed.current = true;
+    settlePaywall(intentId, unlocked);
     router.back();
   };
 
@@ -252,17 +262,37 @@ export default function PaywallScreen() {
     setSelectedId(plan.identifier);
   };
 
-  const buy = async () => {
-    if (!selected || busy) return;
+  const verifyAndClose = async () => {
     setBusy(true);
+    try {
+      const verified = await refreshProAccess();
+      if (verified.isPro) {
+        proEvent('activated', { source: source ?? 'explicit' });
+        close(true);
+      } else Alert.alert('Confirming your purchase', 'Your purchase is processing. Use Restore purchase to check again.');
+    } catch {
+      Alert.alert('Purchase received', 'We could not verify access yet. Your purchase is safe. Check your connection and use Restore purchase.');
+    } finally { setBusy(false); }
+  };
+
+  const purchaseIdentityReady = () => {
+    const owner = getPremiumIdentity();
+    if (owner && getIdentifiedPurchaserId() === owner) return true;
+    Alert.alert('Connecting your account', 'Please wait for your account to connect, then try again.');
+    return false;
+  };
+  const buy = async () => {
+    if (!selected || busy || !purchaseIdentityReady()) return;
+    setBusy(true);
+    try {
     const result = await purchasePackage(selected);
-    setBusy(false);
+    proEvent('purchase_resolved', { outcome: result.outcome, product: selected.product.identifier, source: source ?? 'explicit' });
 
     switch (result.outcome) {
       case 'purchased':
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        refresh();
-        close();
+        await refresh();
+        await verifyAndClose();
         return;
       case 'pending':
         Alert.alert(
@@ -274,20 +304,22 @@ export default function PaywallScreen() {
         Alert.alert('Purchase failed', result.message);
         return;
       case 'cancelled':
-        // A normal outcome, not an error. The paywall stays open.
         return;
     }
+    } catch {
+      Alert.alert('Purchase could not finish', 'Please try again, or restore your purchase if you already paid.');
+    } finally { setBusy(false); }
   };
 
   const restorePurchase = async () => {
-    if (busy) return;
+    if (busy || !purchaseIdentityReady()) return;
     setBusy(true);
+    try {
     const result = await restore();
-    setBusy(false);
 
     if (result.outcome === 'restored') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      close();
+      await verifyAndClose();
       return;
     }
     if (result.outcome === 'nothingToRestore') {
@@ -300,6 +332,9 @@ export default function PaywallScreen() {
       return;
     }
     Alert.alert('Restore failed', result.message);
+    } catch {
+      Alert.alert('Restore could not finish', 'Check your connection and try again.');
+    } finally { setBusy(false); }
   };
 
   if (!available) return <PurchasesUnavailable />;
@@ -332,7 +367,7 @@ export default function PaywallScreen() {
         </View>
 
         <ThemedText variant="largeTitle" style={styles.headline}>
-          Get the full power of Clarity
+          Get personal feedback on every practice
         </ThemedText>
 
         <View style={styles.features}>
@@ -385,6 +420,10 @@ export default function PaywallScreen() {
           </ScrollView>
         )}
 
+        <Pressable onPress={() => close()} accessibilityRole="button" style={{ padding: spacing.md, alignItems: 'center' }}>
+          <ThemedText variant="callout" tone="secondary">Continue free</ThemedText>
+        </Pressable>
+
         <PrimaryButton
           title="Continue with Clarity Pro"
           onPress={buy}
@@ -419,7 +458,7 @@ export default function PaywallScreen() {
         </View>
       </ScrollView>
       {/* Same close control as Settings. */}
-      <ModalCloseToolbar onPress={close} />
+      <ModalCloseToolbar onPress={() => close()} />
     </>
   );
 }

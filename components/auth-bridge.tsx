@@ -1,5 +1,6 @@
 import { useAuth } from '@clerk/expo';
 import { useEffect } from 'react';
+import { setPremiumIdentity, refreshProAccess } from '@/services/pro-access';
 
 import {
   getIdentifiedPurchaserId,
@@ -27,7 +28,14 @@ import { forgetPurchaser, identifyPurchaser } from '@/services/purchases';
  * already the identified one.
  */
 export function AuthBridge() {
-  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken, sessionClaims } = useAuth();
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    setPremiumIdentity(isSignedIn && userId ? userId : null,
+      isSignedIn ? () => getToken(sessionClaims?.aud === 'convex' ? {} : { template: 'convex' }) : null);
+    if (isSignedIn) void refreshProAccess().catch(() => {});
+  }, [isLoaded, isSignedIn, userId, getToken, sessionClaims?.aud]);
 
   useEffect(() => {
     if (!isLoaded) return;

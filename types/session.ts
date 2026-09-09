@@ -121,6 +121,10 @@ export function weakestPhoneme(word: ResultWord): ResultPhoneme | null {
 }
 
 export type SessionResult = {
+  /** Runtime-only upgrade work. Audio remains local; never serialized into history. */
+  assess?: (context: import('@/services/pro-access').PremiumContext) => Promise<SessionResult>;
+  premiumContext?: import('@/services/pro-access').PremiumContext;
+
   /** Defaults to 'passage' when absent (pre-freestyle results). */
   mode?: SessionMode;
   /** Freestyle only: the full recognized transcript. */

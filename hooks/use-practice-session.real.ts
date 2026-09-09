@@ -13,6 +13,8 @@ import {
   useSpeechRecognitionEvent,
 } from 'expo-speech-recognition';
 
+import { PREVIEW_MS } from '@/convex/proPolicy';
+import { PremiumError } from '@/services/pro-access';
 import { modeForId } from '@/lib/passage-catalog';
 import { tokenizePassage } from '@/lib/passage-text';
 import { PassageAligner } from '@/services/alignment';
@@ -615,59 +617,30 @@ export function usePracticeSession(passage: Passage): PracticeSession {
       longestPauseMs: pauses.longestPauseMs,
     };
 
-    const key = process.env.EXPO_PUBLIC_AZURE_SPEECH_KEY;
-    const region = process.env.EXPO_PUBLIC_AZURE_SPEECH_REGION;
-    // Narrowed as we get further in. Every path that falls out of this block
-    // ends up scored by the live layer instead, which the user cannot tell apart
-    // from a real grade — so the one event below the block reports which of them
-    // it was rather than leaving the quiet paths silent.
-    let degraded: ScoringDegradedReason = 'azure-unconfigured';
-    if (key && region) {
-      degraded = 'azure-failed';
-      try {
-        const chunks = buildChunks(
-          tokenized,
-          aligner.timeline,
-          segmentDurations,
-          m.segmentActiveStartMs,
-        ).filter((c) => segmentBytes[c.segmentIndex] != null);
-        if (chunks.length === 0) {
-          degraded = 'azure-no-audio';
-        } else {
-          const wavChunks = chunks.map((c) => ({
-            wavBytes: sliceWav(segmentBytes[c.segmentIndex]!, c.startMs, c.endMs),
-            referenceText: c.referenceText,
-          }));
-          // Read here, not from a hook: `stop()` is not a render. The accent
-          // decides which reference Azure grades against, and it is the
-          // difference between a British reading scoring 80 and scoring 100.
-          const assessments = await assessSession(wavChunks, {
-            key,
-            region,
-            locale: getAccentLocale(),
-          });
-          const azure = buildAzureResult({
-            ...base,
-            chunks,
-            assessments,
-            segments: {
-              durationsMs: segmentDurations,
-              activeStartMs: m.segmentActiveStartMs,
-            },
-          });
-          if (azure) return azure;
-          degraded = 'azure-unusable';
-        }
-      } catch (e) {
-        if (__DEV__) console.warn('[practice] Azure assessment failed:', e);
-        // Paired with the 'azure-failed' event below, which counts the fallback
-        // without saying whether it was the network, the key, or a bad response.
-        Observe.reportError(e);
-      }
-    }
+    const fallback = buildLiveFallbackResult(base);
+    const assessmentTimeline = [...aligner.timeline];
+    const activeStartMs = [...m.segmentActiveStartMs];
+    // Stop always saves basic results. Only Results can request paid assessment;
+    // abandoned reads and restarts never run it.
+    const assess: NonNullable<SessionResult['assess']> = async (context) => {
+      if (!audioUri || !(new File(audioUri).exists)) throw new PremiumError('recording_unavailable', 'That recording is no longer available. Start another practice session.');
+      let remainingPreviewMs = context.grantId ? PREVIEW_MS : Infinity;
+      const chunks = buildChunks(tokenized, assessmentTimeline, segmentDurations, activeStartMs)
+        .flatMap(chunk => {
+          const duration = Math.min(chunk.endMs - chunk.startMs, remainingPreviewMs);
+          remainingPreviewMs -= duration;
+          return duration > 0 ? [{ ...chunk, endMs: chunk.startMs + duration }] : [];
+        })
+        .filter(c => segmentBytes[c.segmentIndex] != null);
+      if (!chunks.length || fallback.spokenWords <= 0) throw new Error('There is not enough speech to assess.');
+      const wavChunks = chunks.map(c => ({ wavBytes: sliceWav(segmentBytes[c.segmentIndex]!, c.startMs, c.endMs), referenceText: c.referenceText }));
+      const assessments = await assessSession(wavChunks, { context, locale: getAccentLocale() });
+      const assessed = buildAzureResult({ ...base, chunks, assessments, segments: { durationsMs: segmentDurations, activeStartMs } });
+      if (!assessed) throw new Error('Detailed feedback could not load. Your basic results are saved.');
+      return { ...assessed, premiumContext: context, assess };
+    };
+    return { ...fallback, assess };
 
-    scoringDegraded({ reason: degraded, locale: getAccentLocale(), durationMs });
-    return buildLiveFallbackResult(base);
   };
 
   // ---- public API -----------------------------------------------------------

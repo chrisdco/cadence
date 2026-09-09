@@ -36,3 +36,7 @@ The app and subscription products have not been submitted to App Review as part 
 - [App Store Connect subscription group](https://appstoreconnect.apple.com/apps/6800457983/distribution/subscription-groups/22323737)
 - [RevenueCat Clarity Pro entitlement](https://app.revenuecat.com/projects/5b920ed3/product-catalog/entitlements/entlebf76a8ae3)
 - [Apple sandbox troubleshooting](https://developer.apple.com/documentation/technotes/tn3186-troubleshooting-in-app-purchases-availability-in-the-sandbox)
+
+## Clarity Pro backend implementation
+
+See [implementation status](../clarity-pro/implementation-status.md) for the deployed Convex access controls, verified RevenueCat development/production webhooks, protected API hosting, test results, and remaining launch checks. Existing product prices were preserved.

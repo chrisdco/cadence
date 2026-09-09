@@ -41,6 +41,8 @@ const store = createHistoryStore({
 });
 
 export const getRecords = store.getRecords;
+export const getBaseRecords = store.getBaseRecords;
+export const applyAssessment = store.applyAssessment;
 export const subscribe = store.subscribe;
 export const getWordStats = store.getWordStats;
 export const removeRecord = store.removeRecord;
